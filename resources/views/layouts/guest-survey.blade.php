@@ -78,8 +78,8 @@
         }
 
         .guest-logo img {
-            width: 74%;
-            height: 74%;
+           
+            height: 100%;
             object-fit: contain;
         }
 
@@ -177,7 +177,7 @@
                     <img src="{{ asset('images/system-logo.png') }}" alt="Survey Logo">
                 </div>
                 <div class="guest-logo">
-                    <img src="{{ asset('images/university-logo.png') }}" alt="PSU Logo" style="height:60px;">
+                    <img src="{{ asset('images/university-logo.png') }}" alt="PSU Logo" >
                 </div>
                 <div class="guest-brand">
                     <h1>{{ config('app.name', 'منصة الاستبيانات') }}</h1>
