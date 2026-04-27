@@ -174,7 +174,7 @@
         <div class="guest-header">
             <div class="guest-header-inner">
                 <div class="guest-logo">
-                    <img src="{{ asset('images/system-logo.png') }}" alt="Survey Logo">
+                    <img src="{{ asset('images/system-logo.png') }}" style="width:75%;" alt="Survey Logo">
                 </div>
                 <div class="guest-logo">
                     <img src="{{ asset('images/university-logo.png') }}" alt="PSU Logo" >
