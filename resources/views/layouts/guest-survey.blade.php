@@ -174,12 +174,17 @@
         <div class="guest-header">
             <div class="guest-header-inner">
                 <div class="guest-logo">
-                    <img src="{{ asset('images/system-logo.png') }}" alt="لوجو التطبيق">
+                    <img src="{{ asset('images/system-logo.png') }}" alt="Survey Logo">
                 </div>
-
+                <div class="guest-logo">
+                    <img src="{{ asset('images/university-logo.png') }}" alt="PSU Logo" style="height:60px;">
+                </div>
                 <div class="guest-brand">
                     <h1>{{ config('app.name', 'منصة الاستبيانات') }}</h1>
                     {{-- <p>وحدة ضمان الجودة والاعتماد</p> --}}
+                    <div class="footer-note" style="color:white">
+                    مركز نظم وتكنولوجيا المعلومات - جامعة بورسعيد
+                    </div>
                 </div>
             </div>
         </div>
@@ -192,7 +197,7 @@
             تم التطوير بواسطة مركز نظم وتكنولوجيا المعلومات - جامعة بورسعيد
         </div>
     </div>
-
+    
     @stack('scripts')
 </body>
 </html>
