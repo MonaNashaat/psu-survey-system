@@ -23,7 +23,7 @@ class CourseOfferingsImport implements ToCollection, WithHeadingRow
         foreach ($rows as $index => $row) {
             $courseCode = trim((string) ($row['course_code'] ?? ''));
             $academicYear = trim((string) ($row['academic_year'] ?? ''));
-            $semester = trim((string) ($row['semester'] ?? ''));
+            $semester = strtolower(trim((string) ($row['semester'] ?? '')));
             $level = trim((string) ($row['level'] ?? ''));
             $instructorName = trim((string) ($row['instructor_name'] ?? ''));
             $assistantName = trim((string) ($row['assistant_name'] ?? ''));
@@ -40,24 +40,26 @@ class CourseOfferingsImport implements ToCollection, WithHeadingRow
                 throw new \Exception('قيمة semester غير صحيحة في الصف رقم ' . ($index + 2) . '. القيم المسموحة: first, second, summer');
             }
 
-            $course = Course::with('department.faculty')
-                ->where('code', $courseCode)
-                ->first();
+            $courseQuery = Course::with('department.faculty')
+                ->where('code', $courseCode);
+
+            if ($this->user->isFacultyAdmin()) {
+                $courseQuery->whereHas('department', function ($query) {
+                    $query->where('faculty_id', $this->user->faculty_id);
+                });
+            }
+
+            if ($this->user->isDepartmentAdmin()) {
+                $courseQuery->where('department_id', $this->user->department_id);
+            }
+
+            $course = $courseQuery->first();
 
             if (!$course) {
-                throw new \Exception('لم يتم العثور على مقرر بالكود ' . $courseCode . ' في الصف رقم ' . ($index + 2));
-            }
-
-            if ($this->user->role === 'faculty_admin') {
-                if ((int) $course->department->faculty_id !== (int) $this->user->faculty_id) {
-                    throw new \Exception('يوجد طرح دراسي خارج نطاق كلية المستخدم في الصف رقم ' . ($index + 2));
-                }
-            }
-
-            if ($this->user->role === 'department_admin') {
-                if ((int) $course->department_id !== (int) $this->user->department_id) {
-                    throw new \Exception('يوجد طرح دراسي خارج نطاق قسم المستخدم في الصف رقم ' . ($index + 2));
-                }
+                throw new \Exception(
+                    'لم يتم العثور على مقرر بالكود ' . $courseCode .
+                    ' داخل نطاق صلاحية المستخدم في الصف رقم ' . ($index + 2)
+                );
             }
 
             CourseOffering::updateOrCreate(
