@@ -22,6 +22,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ActiveSurveysExport;
+use App\Services\SurveyAnalysisExcelService;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
 class SurveyAdminController extends Controller
 {
     public function index()
@@ -32,6 +35,39 @@ class SurveyAdminController extends Controller
             ->get();
 
         return view('admin.surveys.index', compact('surveys'));
+    }
+
+    public function __construct(
+
+        private SurveyAnalysisExcelService $surveyAnalysisExcelService
+
+    ) {}
+    public function exportAnalysis(Survey $survey): BinaryFileResponse
+    {
+        $filePath = $this->surveyAnalysisExcelService->export($survey);
+
+        $safeTitle = preg_replace(
+            '/[^\p{L}\p{N}\-_]+/u',
+            '-',
+            $survey->title ?? 'survey'
+        );
+
+        $fileName = sprintf(
+            'survey-%d-%s-analysis.xlsx',
+            $survey->id,
+            trim($safeTitle, '-')
+        );
+
+        return response()
+            ->download(
+                $filePath,
+                $fileName,
+                [
+                    'Content-Type' =>
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ]
+            )
+            ->deleteFileAfterSend(true);
     }
 
     public function create()
@@ -704,25 +740,22 @@ class SurveyAdminController extends Controller
         if ($user->isFacultyAdmin()) {
 
             return Survey::where('faculty_id', $user->faculty_id)
-    
+
                 ->whereIn('scope_level', ['faculty', 'department']);
-    
         }
-    
+
         if ($user->isDepartmentAdmin()) {
-    
+
             return Survey::where('department_id', $user->department_id)
-    
+
                 ->where('scope_level', 'department');
-    
         }
-    
+
         return Survey::whereHas('permissions', function ($query) use ($user) {
-    
+
             $query->where('user_id', $user->id)
-    
+
                 ->where('permission_type', 'view_results');
-    
         });
     }
 
@@ -822,13 +855,11 @@ class SurveyAdminController extends Controller
         if ($user->isFacultyAdmin()) {
 
             if ((int) $survey->faculty_id === (int) $user->faculty_id) {
-    
+
                 return;
-    
             }
-    
+
             abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
-    
         }
 
         if ($user->isDepartmentAdmin()) {

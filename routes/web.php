@@ -40,6 +40,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/', [SurveyAdminController::class, 'dashboard'])->name('home');
     Route::get('/dashboard', [SurveyAdminController::class, 'dashboard'])->name('dashboard');
 
+    Route::get(
+        '/surveys/{survey}/analysis/export',
+        [SurveyAdminController::class, 'exportAnalysis']
+    )->name('surveys.analysis.export');
+    
     /*
     |--------------------------------------------------------------------------
     | Survey Routes

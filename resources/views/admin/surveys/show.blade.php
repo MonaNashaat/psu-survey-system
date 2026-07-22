@@ -70,7 +70,7 @@
 
         <a href="{{ route('surveys.show', $survey->id) }}" target="_blank" class="btn btn-secondary">فتح الرابط العام</a>
         <a href="{{ route('admin.surveys.results', $survey->id) }}" class="btn btn-primary">عرض النتائج</a>
-
+        <a href="{{ route('admin.surveys.analysis.export', $survey) }}" class="btn btn-success">تحميل تحليل الاستبيان Excel </a>
         @if($currentUser->isUniversityAdmin())
             <a href="{{ route('admin.surveys.permissions', $survey->id) }}" class="btn btn-secondary">الصلاحيات</a>
         @endif
