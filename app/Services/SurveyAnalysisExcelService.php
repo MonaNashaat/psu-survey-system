@@ -66,7 +66,7 @@ class SurveyAnalysisExcelService
      * - Question statistics
      * - Individual response analysis
      * - Overall result
-     * - Student comments
+     * - Respondents comments
      */
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Course Evaluation Survey');
@@ -181,8 +181,8 @@ class SurveyAnalysisExcelService
          * K      Question code
          * L...   Individual responses
          * Next   Class Average
-         * Next   # Students Exceeding Criteria
-         * Next   % Students Exceeding Criteria
+         * Next   # Respondents Exceeding Criteria
+         * Next   % Respondents Exceeding Criteria
          * Next   Section Average
          */
 
@@ -560,12 +560,12 @@ class SurveyAnalysisExcelService
 
         $sheet->setCellValue(
             "{$exceedingColumnLetter}{$headerRow}",
-            "# students\nExceeding\nCriteria"
+            "# respondents\nExceeding\nCriteria"
         );
 
         $sheet->setCellValue(
             "{$percentageColumnLetter}{$headerRow}",
-            "% of\nstudents\nExceeding\nCriteria"
+            "% of\nrespondents\nExceeding\nCriteria"
         );
 
         $sheet->setCellValue(
@@ -989,7 +989,7 @@ class SurveyAnalysisExcelService
 
         $sheet->setCellValue(
             "{$exceedingColumnLetter}{$summarySecondRow}",
-            'No. students exceeding criteria'
+            'No. respondents exceeding criteria'
         );
 
         $sheet->setCellValue(
@@ -1004,7 +1004,7 @@ class SurveyAnalysisExcelService
 
         $sheet->setCellValue(
             "{$exceedingColumnLetter}{$summaryThirdRow}",
-            '% Students exceeding criteria'
+            '% respondents exceeding criteria'
         );
 
         $sheet->getStyle(
@@ -1335,7 +1335,7 @@ class SurveyAnalysisExcelService
             'Questions',
             'Answers',
             'Average',
-            'Satisfied Students',
+            'Satisfied Respondents',
             'Satisfaction %',
             'Status',
         ];
@@ -1755,7 +1755,7 @@ class SurveyAnalysisExcelService
      *
      * Two charts are created for each survey section:
      * 1. Class Average
-     * 2. % Students Exceeding Criteria
+     * 2. % respondents Exceeding Criteria
      */
     private function buildChartsSheet(
         Worksheet $sheet,
@@ -1875,7 +1875,7 @@ class SurveyAnalysisExcelService
 
             $sheet->setCellValue(
                 "{$percentageColumn}{$dataRow}",
-                '% Students Exceeding Criteria'
+                '% Respondents Exceeding Criteria'
             );
 
             $sheet->getStyle(
@@ -2047,7 +2047,7 @@ class SurveyAnalysisExcelService
 
             /*
         |--------------------------------------------------------------------------
-        | Chart 2: % Students Exceeding Criteria
+        | Chart 2: % Respondents Exceeding Criteria
         |--------------------------------------------------------------------------
         */
 
@@ -2088,7 +2088,7 @@ class SurveyAnalysisExcelService
                     'percentage_chart_' . $chartIndex,
                     new Title(
                         $sectionTitle
-                            . ' - % Students Exceeding Criteria'
+                            . ' - % Respondents Exceeding Criteria'
                     ),
                     null,
                     $percentagePlotArea
@@ -2199,7 +2199,7 @@ class SurveyAnalysisExcelService
             );
     }
     /**
-     * Build the students comments sheet.
+     * Build the respondents comments sheet.
      */
     private function buildCommentsSheet(
         Worksheet $sheet,
@@ -2222,7 +2222,7 @@ class SurveyAnalysisExcelService
         $sheet->mergeCells('A2:F2');
         $sheet->setCellValue(
             'A2',
-            'STUDENTS COMMENTS'
+            'RESPONDENTS COMMENTS'
         );
 
         $sheet->getStyle('A2:F2')
@@ -2254,7 +2254,7 @@ class SurveyAnalysisExcelService
             'Question No.',
             'Question',
             'Response',
-            'Student Comment',
+            'Respondent Comment',
         ];
 
         $headerRow = 4;
@@ -2731,15 +2731,15 @@ class SurveyAnalysisExcelService
 
         return match (true) {
             $percentage >= 90 =>
-            'Very high student satisfaction.',
+            'Very high respondents satisfaction.',
             $percentage >= 75 =>
-            'High student satisfaction.',
+            'High respondents satisfaction.',
             $percentage >= 60 =>
-            'Moderate student satisfaction.',
+            'Moderate respondents satisfaction.',
             $percentage >= 50 =>
             'Satisfaction requires improvement.',
             default =>
-            'Low student satisfaction.',
+            'Low respondents satisfaction.',
         };
     }
     /**
@@ -2823,7 +2823,7 @@ class SurveyAnalysisExcelService
         return $count;
     }
     /**
-     * Append students' comments to the same responses sheet.
+     * Append respondents' comments to the same responses sheet.
      *
      * Returns the final used row number.
      */
@@ -2844,7 +2844,7 @@ class SurveyAnalysisExcelService
 
         $sheet->setCellValue(
             "A{$startRow}",
-            'STUDENTS COMMENTS AND TEXT RESPONSES'
+            'RESPONDENTS COMMENTS AND TEXT RESPONSES'
         );
 
         $sheet->getStyle(
@@ -3003,7 +3003,7 @@ class SurveyAnalysisExcelService
 
         $sheet->setCellValue(
             "{$commentStartColumn}{$headerRow}",
-            'Student Comment'
+            'Respondents Comment'
         );
 
         $sheet->getStyle(
