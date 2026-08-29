@@ -21,7 +21,7 @@ class SurveyAnalysisService
     |
     */
 
-    private float $satisfactionThreshold = 4.0;
+    private float $satisfactionThreshold = 2.2;
 
     private float $acceptableAverage = 2.2;
 
