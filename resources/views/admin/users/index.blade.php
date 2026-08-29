@@ -9,6 +9,7 @@
     @php
         $roleLabels = [
             'university_admin' => 'أدمن جامعة',
+            'presidency_admin' => 'المكتب الفني لرئيس الجامعة',
             'faculty_admin' => 'أدمن كلية',
             'department_admin' => 'أدمن قسم',
             'results_viewer' => 'عرض نتائج فقط',

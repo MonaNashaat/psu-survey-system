@@ -23,7 +23,11 @@ class ActiveSurveysExport implements FromCollection, WithHeadings
             ->where('is_active', true);
 
         if ($this->user->isUniversityAdmin()) {
-            // يشوف كل الاستبيانات المفعلة
+            $query->where('scope_level', 'university')
+                ->where('survey_owner', Survey::OWNER_QUALITY_CENTER);
+        } elseif ($this->user->isPresidencyAdmin()) {
+            $query->where('scope_level', 'university')
+                ->where('survey_owner', Survey::OWNER_PRESIDENCY);
         } elseif ($this->user->isFacultyAdmin()) {
             $query->where('faculty_id', $this->user->faculty_id);
         } elseif ($this->user->isDepartmentAdmin()) {

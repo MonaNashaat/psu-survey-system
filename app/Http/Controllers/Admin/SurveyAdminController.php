@@ -44,6 +44,7 @@ class SurveyAdminController extends Controller
     ) {}
     public function exportAnalysis(Survey $survey): BinaryFileResponse
     {
+        $this->authorizeSurveyResultsAccess($survey);
         $filePath = $this->surveyAnalysisExcelService->export($survey);
 
         $safeTitle = preg_replace(
@@ -88,8 +89,11 @@ class SurveyAdminController extends Controller
     {
         $validated = $this->validateSurveyRequest($request);
         $user = auth()->user();
+        $surveyOwner = $user->isPresidencyAdmin()
+            ? Survey::OWNER_PRESIDENCY
+            : Survey::OWNER_QUALITY_CENTER;
 
-        DB::transaction(function () use ($request, $validated, $user) {
+        DB::transaction(function () use ($request, $validated, $user, $surveyOwner) {
             $courseOffering = $this->resolveCourseOffering($validated, $user);
             [$scopeLevel, $facultyId, $departmentId] = $this->resolveSurveyScope($validated, $user, $courseOffering);
 
@@ -100,6 +104,7 @@ class SurveyAdminController extends Controller
                 'description' => $validated['description'] ?? null,
 
                 'scope_level' => $scopeLevel,
+                'survey_owner' => $surveyOwner,
                 'faculty_id' => $facultyId,
                 'department_id' => $departmentId,
 
@@ -430,7 +435,7 @@ class SurveyAdminController extends Controller
         $validated = $request->validate($rules);
         $user = auth()->user();
 
-        if ($user->isUniversityAdmin()) {
+        if ($user->isUniversityAdmin() || $user->isPresidencyAdmin()) {
             $validated['survey_scope'] = 'general';
             $validated['scope_level'] = 'university';
             $validated['faculty_id'] = null;
@@ -645,7 +650,17 @@ class SurveyAdminController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->isUniversityAdmin()) {
+        if ($user->isPresidencyAdmin()) {
+
+            $faculties = collect();
+    
+            $departments = collect();
+    
+            $courses = collect();
+    
+            $courseOfferings = collect();
+    
+        } else if ($user->isUniversityAdmin()) {
             $faculties = Faculty::orderBy('name_ar')->get();
             $departments = Department::with('faculty')->orderBy('name_ar')->get();
             $courses = Course::with('department.faculty')->orderBy('name_ar')->get();
@@ -695,6 +710,10 @@ class SurveyAdminController extends Controller
     {
         $user = auth()->user();
 
+        if ($user->isPresidencyAdmin()) {
+            return collect();
+        }
+
         if ($user->isUniversityAdmin()) {
             return SurveyTemplate::with(['faculty', 'department'])
                 ->where('is_active', true)
@@ -734,27 +753,27 @@ class SurveyAdminController extends Controller
     private function getVisibleSurveysQuery(User $user)
     {
         if ($user->isUniversityAdmin()) {
-            return Survey::where('scope_level', 'university');
+            return Survey::where('scope_level', 'university')
+                ->where('survey_owner', Survey::OWNER_QUALITY_CENTER);
+        }
+
+        if ($user->isPresidencyAdmin()) {
+            return Survey::where('scope_level', 'university')
+                ->where('survey_owner', Survey::OWNER_PRESIDENCY);
         }
 
         if ($user->isFacultyAdmin()) {
-
             return Survey::where('faculty_id', $user->faculty_id)
-
                 ->whereIn('scope_level', ['faculty', 'department']);
         }
 
         if ($user->isDepartmentAdmin()) {
-
             return Survey::where('department_id', $user->department_id)
-
                 ->where('scope_level', 'department');
         }
 
         return Survey::whereHas('permissions', function ($query) use ($user) {
-
             $query->where('user_id', $user->id)
-
                 ->where('permission_type', 'view_results');
         });
     }
@@ -787,7 +806,7 @@ class SurveyAdminController extends Controller
 
     private function resolveSurveyScope(array $validated, User $user, ?CourseOffering $courseOffering = null): array
     {
-        if ($user->isUniversityAdmin()) {
+        if ($user->isUniversityAdmin() || $user->isPresidencyAdmin()) {
             return ['university', null, null];
         }
 
@@ -845,10 +864,24 @@ class SurveyAdminController extends Controller
         $user = auth()->user();
 
         if ($user->isUniversityAdmin()) {
-            if ($survey->scope_level === 'university') {
+            if (
+                $survey->scope_level === 'university'
+                && $survey->survey_owner === Survey::OWNER_QUALITY_CENTER
+            ) {
                 return;
             }
-
+        
+            abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
+        }
+        
+        if ($user->isPresidencyAdmin()) {
+            if (
+                $survey->scope_level === 'university'
+                && $survey->survey_owner === Survey::OWNER_PRESIDENCY
+            ) {
+                return;
+            }
+        
             abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
         }
 
@@ -885,10 +918,24 @@ class SurveyAdminController extends Controller
         $user = auth()->user();
 
         if ($user->isUniversityAdmin()) {
-            if ($survey->scope_level === 'university') {
+            if (
+                $survey->scope_level === 'university'
+                && $survey->survey_owner === Survey::OWNER_QUALITY_CENTER
+            ) {
                 return;
             }
-
+        
+            abort(403, 'ليس لديك صلاحية تعديل هذا الاستبيان');
+        }
+        
+        if ($user->isPresidencyAdmin()) {
+            if (
+                $survey->scope_level === 'university'
+                && $survey->survey_owner === Survey::OWNER_PRESIDENCY
+            ) {
+                return;
+            }
+        
             abort(403, 'ليس لديك صلاحية تعديل هذا الاستبيان');
         }
 
@@ -917,6 +964,7 @@ class SurveyAdminController extends Controller
 
         if (
             $user->isUniversityAdmin()
+            || $user->isPresidencyAdmin()
             || $user->isFacultyAdmin()
             || $user->isDepartmentAdmin()
         ) {
@@ -972,6 +1020,7 @@ class SurveyAdminController extends Controller
     public function bulkStore(Request $request)
     {
         $user = auth()->user();
+
 
         if (!$user->isDepartmentAdmin()) {
             abort(403, 'الإنشاء الجماعي لاستبيانات المقررات متاح لأدمن القسم فقط');
@@ -1070,6 +1119,7 @@ class SurveyAdminController extends Controller
 
         if (
             !$user->isUniversityAdmin() &&
+            !$user->isPresidencyAdmin() &&
             !$user->isFacultyAdmin() &&
             !$user->isDepartmentAdmin()
         ) {

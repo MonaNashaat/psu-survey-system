@@ -43,6 +43,11 @@
                         <label class="form-label">نوع المستخدم</label>
                         <select name="role" id="role" required>
                             <option value="">اختر النوع</option>
+                            <option value="presidency_admin" {{ old('role', $user->role) == 'presidency_admin' ? 'selected' : '' }}>
+
+                                المكتب الفني لرئيس الجامعة
+                            
+                            </option>
                             <option value="university_admin" {{ old('role', $user->role) == 'university_admin' ? 'selected' : '' }}>أدمن جامعة</option>
                             <option value="faculty_admin" {{ old('role', $user->role) == 'faculty_admin' ? 'selected' : '' }}>أدمن كلية</option>
                             <option value="department_admin" {{ old('role', $user->role) == 'department_admin' ? 'selected' : '' }}>أدمن قسم</option>

@@ -53,8 +53,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('/surveys', [SurveyAdminController::class, 'index'])->name('surveys.index');
 
-    Route::middleware(['role:university_admin,faculty_admin,department_admin'])->group(function () {
-        // static routes first
+    Route::middleware(['role:university_admin,presidency_admin,faculty_admin,department_admin'])->group(function () {        // static routes first
         Route::get('/surveys/create', [SurveyAdminController::class, 'create'])->name('surveys.create');
         Route::post('/surveys', [SurveyAdminController::class, 'store'])->name('surveys.store');
 

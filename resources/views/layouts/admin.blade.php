@@ -46,10 +46,12 @@
                    class="sidebar-link {{ request()->routeIs('admin.surveys.*') ? 'active' : '' }}">
                     <span>الاستبيانات</span>
                 </a>
-                <a href="{{ route('admin.templates.index') }}"
+                @unless(auth()->user()->isPresidencyAdmin())
+                    <a href="{{ route('admin.templates.index') }}"
                     class="sidebar-link {{ request()->routeIs('admin.templates.*') ? 'active' : '' }}">
                         <span>قوالب الاستبيانات</span>
-                </a>
+                    </a>
+                @endunless
             </div>
 
             <div class="sidebar-section">

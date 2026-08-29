@@ -135,7 +135,7 @@ class UserManagementController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => $emailRule,
-            'role' => 'required|in:university_admin,faculty_admin,department_admin,results_viewer',
+            'role' => 'required|in:university_admin,presidency_admin,faculty_admin,department_admin,results_viewer',
             'faculty_id' => 'nullable|exists:faculties,id',
             'department_id' => 'nullable|exists:departments,id',
             'password' => $user ? 'nullable|string|min:6' : 'required|string|min:6',

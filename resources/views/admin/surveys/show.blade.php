@@ -16,7 +16,10 @@
         ];
 
         $scopeLabel = match($survey->scope_level) {
-            'university' => 'جامعة',
+            'university' => $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
+                ? 'المكتب الفني لرئيس الجامعة'
+                : 'جامعة / مركز الجودة',
+
             'faculty' => 'كلية',
             'department' => 'قسم',
             default => '—',
@@ -46,9 +49,22 @@
         $responsesCount = $survey->responses_count ?? $survey->responses()->count();
 
         $canEdit = false;
+
+
+        $canEdit = false;
+
         if ($currentUser->isUniversityAdmin()) {
-            $canEdit = true;
+            $canEdit = (
+                $survey->scope_level === 'university'
+                && $survey->survey_owner === \App\Models\Survey::OWNER_QUALITY_CENTER
+            );
+        } elseif ($currentUser->isPresidencyAdmin()) {
+            $canEdit = (
+                $survey->scope_level === 'university'
+                && $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
+            );
         } elseif ($currentUser->isFacultyAdmin()) {
+
             $canEdit = (
                 ($survey->scope_level === 'faculty' && $survey->faculty_id === $currentUser->faculty_id) ||
                 ($survey->scope_level === 'department' && $survey->faculty_id === $currentUser->faculty_id)
@@ -117,6 +133,14 @@
                     <div><strong>العنوان:</strong> {{ $survey->title }}</div>
                     <div><strong>الوصف:</strong> {{ $survey->description ?: '—' }}</div>
                     <div><strong>المستوى:</strong> {{ $scopeLabel }}</div>
+                    @if($survey->scope_level === 'university')
+    <div>
+        <strong>الجهة:</strong>
+        {{ $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
+            ? 'المكتب الفني لرئيس الجامعة'
+            : 'مركز ضمان الجودة والتأهيل للاعتماد' }}
+    </div>
+@endif
                     <div><strong>نوع الربط:</strong> {{ $isCourseSurvey ? 'مقرر' : 'عام' }}</div>
                     <div>
                         <strong>الحالة:</strong>

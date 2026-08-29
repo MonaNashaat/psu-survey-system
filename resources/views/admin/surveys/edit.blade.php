@@ -16,11 +16,16 @@
 
         $currentUser = auth()->user();
         $isUniversityAdmin = $currentUser->isUniversityAdmin();
+        $isPresidencyAdmin = $currentUser->isPresidencyAdmin();
         $isFacultyAdmin = $currentUser->isFacultyAdmin();
         $isDepartmentAdmin = $currentUser->isDepartmentAdmin();
 
         $surveyScope = old('survey_scope', $survey->course_offering_id ? 'course' : 'general');
-        $scopeLevel = $isUniversityAdmin ? 'university' : ($isFacultyAdmin ? 'faculty' : 'department');
+        $scopeLevel = ($isUniversityAdmin || $isPresidencyAdmin)
+
+            ? 'university'
+
+            : ($isFacultyAdmin ? 'faculty' : 'department');
 
         $departmentsJson = $departments->map(function ($department) {
             return [
@@ -82,11 +87,19 @@
                     <div class="form-group">
                         <label class="form-label">نوع الاستبيان</label>
 
-                        @if($isUniversityAdmin)
+                        @if($isUniversityAdmin || $isPresidencyAdmin)
                             <input type="hidden" name="survey_scope" id="survey_scope" value="general">
-                            <input type="text" value="استبيان عام على مستوى الجامعة" disabled>
+
+                            <input type="text"
+                                value="{{ $isPresidencyAdmin
+                                        ? 'استبيان المكتب الفني لرئيس الجامعة'
+                                        : 'استبيان عام على مستوى الجامعة' }}"
+                                disabled>
+
                             <small style="display:block; margin-top:8px; color:#6b7280;">
-                                أدمن الجامعة يعدّل استبيانات الجامعة فقط.
+                                {{ $isPresidencyAdmin
+                                    ? 'المكتب الفني يعدّل الاستبيانات التابعة له فقط.'
+                                    : 'أدمن الجامعة يعدّل استبيانات الجامعة فقط.' }}
                             </small>
                         @elseif($isFacultyAdmin)
                             <input type="hidden" name="survey_scope" id="survey_scope" value="general">
@@ -107,17 +120,27 @@
                 </div>
 
                 <div class="grid-2">
-                    @if($isUniversityAdmin)
+                    @if($isUniversityAdmin || $isPresidencyAdmin)
                         <input type="hidden" name="scope_level" id="scope_level" value="university">
 
                         <div class="form-group">
                             <label class="form-label">نطاق الاستبيان</label>
-                            <input type="text" value="استبيان على مستوى الجامعة" disabled>
+
+                            <input type="text"
+                                value="{{ $isPresidencyAdmin
+                                        ? 'المكتب الفني لرئيس الجامعة'
+                                        : 'استبيان على مستوى الجامعة' }}"
+                                disabled>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">ملاحظة</label>
-                            <input type="text" value="لا يمكن لأدمن الجامعة تعديل استبيان كلية أو قسم أو مادة" disabled>
+
+                            <input type="text"
+                                value="{{ $isPresidencyAdmin
+                                        ? 'لا يمكن تعديل استبيانات مركز الجودة أو الكليات أو الأقسام أو المواد'
+                                        : 'لا يمكن لأدمن الجامعة تعديل استبيان كلية أو قسم أو مادة' }}"
+                                disabled>
                         </div>
                     @elseif($isFacultyAdmin)
                         <input type="hidden" name="scope_level" id="scope_level" value="faculty">
@@ -148,7 +171,7 @@
                         </div>
                     @endif
                 </div>
-
+                @unless($isPresidencyAdmin)
                 <div class="grid-2">
                     <div class="form-group">
                         <label class="form-label">استخدام قالب جاهز</label>
@@ -160,6 +183,7 @@
                         </small>
                     </div>
                 </div>
+                @endunless
 
                 @if($isDepartmentAdmin)
                     <div id="course-offering-wrapper" style="display: {{ $surveyScope === 'course' ? 'block' : 'none' }};">

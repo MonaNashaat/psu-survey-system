@@ -42,6 +42,11 @@
                         <label class="form-label">نوع المستخدم</label>
                         <select name="role" id="role" required>
                             <option value="">اختر النوع</option>
+                            <option value="presidency_admin" {{ old('role') == 'presidency_admin' ? 'selected' : '' }}>
+
+                                المكتب الفني لرئيس الجامعة
+                        
+                            </option>
                             <option value="university_admin" {{ old('role') == 'university_admin' ? 'selected' : '' }}>أدمن جامعة</option>
                             <option value="faculty_admin" {{ old('role') == 'faculty_admin' ? 'selected' : '' }}>أدمن كلية</option>
                             <option value="department_admin" {{ old('role') == 'department_admin' ? 'selected' : '' }}>أدمن قسم</option>

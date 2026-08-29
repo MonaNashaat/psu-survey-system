@@ -10,7 +10,17 @@
         $currentUser = auth()->user();
     @endphp
 
-    @if($currentUser->isUniversityAdmin() || $currentUser->isFacultyAdmin() || $currentUser->isDepartmentAdmin())
+        @if(
+
+        $currentUser->isUniversityAdmin()
+
+        || $currentUser->isPresidencyAdmin()
+
+        || $currentUser->isFacultyAdmin()
+
+        || $currentUser->isDepartmentAdmin()
+
+        )
         <div class="page-actions">
             <a href="{{ route('admin.surveys.create') }}" class="btn btn-primary">إنشاء استبيان جديد</a>
         </div>
@@ -73,7 +83,15 @@
                         $canEdit = false;
 
                         if ($currentUser->isUniversityAdmin()) {
-                            $canEdit = true;
+                            $canEdit = (
+                                $survey->scope_level === 'university'
+                                && $survey->survey_owner === \App\Models\Survey::OWNER_QUALITY_CENTER
+                            );
+                        } elseif ($currentUser->isPresidencyAdmin()) {
+                            $canEdit = (
+                                $survey->scope_level === 'university'
+                                && $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
+                            );
                         } elseif ($currentUser->isFacultyAdmin()) {
                             $canEdit = (
                                 ($survey->scope_level === 'faculty' && $survey->faculty_id === $currentUser->faculty_id) ||
@@ -92,7 +110,11 @@
 
                         <td>
                             @if($survey->scope_level === 'university')
-                                <span class="badge badge-success">جامعة</span>
+                                @if($survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY)
+                                    <span class="badge badge-success">المكتب الفني لرئيس الجامعة</span>
+                                @else
+                                    <span class="badge badge-success">جامعة / مركز الجودة</span>
+                                @endif
                             @elseif($survey->scope_level === 'faculty')
                                 <span class="badge badge-warning">كلية</span>
                             @else
@@ -138,7 +160,17 @@
 
                         <td>
                             <div class="page-actions" style="margin:0;">
-                                @if($currentUser->isUniversityAdmin() || $currentUser->isFacultyAdmin() || $currentUser->isDepartmentAdmin())
+                                @if(
+
+                                    $currentUser->isUniversityAdmin()
+
+                                    || $currentUser->isPresidencyAdmin()
+
+                                    || $currentUser->isFacultyAdmin()
+
+                                    || $currentUser->isDepartmentAdmin()
+
+                                )
                                     <a href="{{ route('admin.surveys.show', $survey->id) }}" class="btn btn-secondary">تفاصيل</a>
 
                                     @if($canEdit)

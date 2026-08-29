@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Survey extends Model
 {
+    public const OWNER_QUALITY_CENTER = 'quality_center';
+
+    public const OWNER_PRESIDENCY = 'presidency';
+
     protected $fillable = [
         'title',
         'description',
@@ -20,6 +24,7 @@ class Survey extends Model
         'semester',
         'level',
         'academic_year',
+        'survey_owner',
 
         'start_date',
         'end_date',
@@ -117,5 +122,13 @@ class Survey extends Model
 
         return true;
     }
+    public function isQualityCenterSurvey(): bool
+    {
+        return $this->survey_owner === self::OWNER_QUALITY_CENTER;
+    }
 
+    public function isPresidencySurvey(): bool
+    {
+        return $this->survey_owner === self::OWNER_PRESIDENCY;
+    }
 }

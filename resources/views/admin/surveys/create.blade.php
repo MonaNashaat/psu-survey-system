@@ -33,6 +33,7 @@
 
         $currentUser = auth()->user();
         $isUniversityAdmin = $currentUser->isUniversityAdmin();
+        $isPresidencyAdmin = $currentUser->isPresidencyAdmin();
         $isFacultyAdmin = $currentUser->isFacultyAdmin();
         $isDepartmentAdmin = $currentUser->isDepartmentAdmin();
 
@@ -42,7 +43,15 @@
 
     <div class="page-actions">
         <a href="{{ route('admin.surveys.index') }}" class="btn btn-secondary">رجوع إلى الاستبيانات</a>
-        <a href="{{ route('admin.templates.index') }}" class="btn btn-secondary">قوالب الاستبيانات</a>
+        @unless($isPresidencyAdmin)
+
+            <a href="{{ route('admin.templates.index') }}" class="btn btn-secondary">
+
+                قوالب الاستبيانات
+
+            </a>
+
+        @endunless
         @if($isDepartmentAdmin)
             <a href="{{ route('admin.surveys.bulk.create') }}" class="btn btn-secondary">إنشاء استبيانات جماعيًا</a>
         @endif
@@ -62,11 +71,23 @@
                     <div class="form-group">
                         <label class="form-label">نوع الاستبيان</label>
 
-                        @if($isUniversityAdmin)
+                        @if($isUniversityAdmin || $isPresidencyAdmin)
                             <input type="hidden" name="survey_scope" id="survey_scope" value="general">
-                            <input type="text" value="استبيان عام على مستوى الجامعة" disabled>
+
+                            <input type="text"
+                        
+                                value="{{ $isPresidencyAdmin ? 'استبيان المكتب الفني لرئيس الجامعة' : 'استبيان عام على مستوى الجامعة' }}"
+                        
+                                disabled>
+                        
                             <small style="display:block; margin-top:8px; color:#6b7280;">
-                                هذا الحساب ينشئ استبيانات عامة على مستوى الجامعة فقط.
+                        
+                                {{ $isPresidencyAdmin
+                        
+                                    ? 'هذا الحساب ينشئ استبيانات خاصة بالمكتب الفني لرئيس الجامعة فقط.'
+                        
+                                    : 'هذا الحساب ينشئ استبيانات عامة على مستوى الجامعة فقط.' }}
+                        
                             </small>
                         @elseif($isFacultyAdmin)
                             <input type="hidden" name="survey_scope" id="survey_scope" value="general">
@@ -91,17 +112,35 @@
                 </div>
 
                 <div class="grid-2">
-                    @if($isUniversityAdmin)
+                    @if($isUniversityAdmin || $isPresidencyAdmin)
                         <input type="hidden" name="scope_level" value="university">
 
                         <div class="form-group">
+                    
                             <label class="form-label">نطاق الاستبيان</label>
-                            <input type="text" value="على مستوى الجامعة" disabled>
+                    
+                            <input type="text"
+                    
+                                value="{{ $isPresidencyAdmin ? 'المكتب الفني لرئيس الجامعة' : 'على مستوى الجامعة' }}"
+                    
+                                disabled>
+                    
                         </div>
-
+                    
                         <div class="form-group">
+                    
                             <label class="form-label">ملاحظات</label>
-                            <input type="text" value="لا حاجة لتحديد كلية أو قسم أو مادة" disabled>
+                    
+                            <input type="text"
+                    
+                                value="{{ $isPresidencyAdmin
+                    
+                                        ? 'الاستبيان تابع للمكتب الفني لرئيس الجامعة'
+                    
+                                        : 'لا حاجة لتحديد كلية أو قسم أو مادة' }}"
+                    
+                                disabled>
+                    
                         </div>
                     @elseif($isFacultyAdmin)
                         <input type="hidden" name="scope_level" value="faculty">
@@ -133,6 +172,7 @@
                     @endif
                 </div>
 
+                @unless($isPresidencyAdmin)
                 <div class="grid-2">
                     <div class="form-group">
                         <label class="form-label">استخدام قالب جاهز</label>
@@ -144,6 +184,8 @@
                         </small>
                     </div>
                 </div>
+                    
+                @endunless
 
                 @if($isDepartmentAdmin)
                     <div id="course-offering-wrapper" style="display: {{ $oldSurveyScope === 'course' ? 'block' : 'none' }};">

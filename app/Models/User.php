@@ -75,6 +75,10 @@ class User extends Authenticatable
     {
         return $this->role === 'university_admin';
     }
+    public function isPresidencyAdmin(): bool
+    {
+        return $this->role === 'presidency_admin';
+    }
 
     public function isFacultyAdmin(): bool
     {
@@ -98,6 +102,7 @@ class User extends Authenticatable
     {
         return in_array($this->role, [
             'university_admin',
+            'presidency_admin',
             'faculty_admin',
             'department_admin',
         ], true);
@@ -114,6 +119,7 @@ class User extends Authenticatable
     {
         return match ($this->role) {
             'university_admin' => 'أدمن جامعة',
+            'presidency_admin' => 'المكتب الفني لرئيس الجامعة',
             'faculty_admin' => 'أدمن كلية',
             'department_admin' => 'أدمن قسم',
             'results_viewer' => 'عرض نتائج فقط',
@@ -123,24 +129,32 @@ class User extends Authenticatable
     public function canViewSurveyResults(Survey $survey): bool
     {
         if ($this->isUniversityAdmin()) {
-            return true;
+            return $survey->scope_level === 'university'
+                && $survey->survey_owner === Survey::OWNER_QUALITY_CENTER;
         }
-
+    
+        if ($this->isPresidencyAdmin()) {
+            return $survey->scope_level === 'university'
+                && $survey->survey_owner === Survey::OWNER_PRESIDENCY;
+        }
+    
         if ($this->isFacultyAdmin()) {
-            return $survey->faculty_id === $this->faculty_id;
+            return in_array($survey->scope_level, ['faculty', 'department'], true)
+                && (int) $survey->faculty_id === (int) $this->faculty_id;
         }
-
+    
         if ($this->isDepartmentAdmin()) {
-            return $survey->department_id === $this->department_id;
+            return $survey->scope_level === 'department'
+                && (int) $survey->department_id === (int) $this->department_id;
         }
-
+    
         if ($this->isResultsViewer()) {
             return $this->surveyPermissions()
                 ->where('survey_id', $survey->id)
                 ->where('permission_type', 'view_results')
                 ->exists();
         }
-
+    
         return false;
     }
 }
