@@ -51,17 +51,37 @@ class SurveyController extends Controller
         foreach ($survey->sections as $section) {
             foreach ($section->questions as $question) {
                 $key = 'answers.' . $question->id;
-                $rules[$key] = $question->type === 'text'
-                    ? ($question->is_required ? 'required|string' : 'nullable|string')
-                    : ($question->is_required ? 'required' : 'nullable');
+                if ($question->type === 'text') {
+                    $rules[$key] = $question->is_required
+                        ? 'required|string'
+                        : 'nullable|string';
+                } elseif ($question->type === 'date') {
+                    $rules[$key] = $question->is_required
+                        ? 'required|date'
+                        : 'nullable|date';
+                } else {
+                    $rules[$key] = $question->is_required
+                        ? 'required'
+                        : 'nullable';
+                }
             }
         }
 
         foreach ($survey->questions->whereNull('survey_section_id') as $question) {
             $key = 'answers.' . $question->id;
-            $rules[$key] = $question->type === 'text'
-                ? ($question->is_required ? 'required|string' : 'nullable|string')
-                : ($question->is_required ? 'required' : 'nullable');
+            if ($question->type === 'text') {
+                $rules[$key] = $question->is_required
+                    ? 'required|string'
+                    : 'nullable|string';
+            } elseif ($question->type === 'date') {
+                $rules[$key] = $question->is_required
+                    ? 'required|date'
+                    : 'nullable|date';
+            } else {
+                $rules[$key] = $question->is_required
+                    ? 'required'
+                    : 'nullable';
+            }
         }
 
         $validated = $request->validate($rules);

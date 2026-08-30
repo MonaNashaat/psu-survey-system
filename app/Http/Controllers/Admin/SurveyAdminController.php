@@ -427,7 +427,7 @@ class SurveyAdminController extends Controller
                 'sections.*.title' => 'required|string|max:255',
                 'sections.*.questions' => 'required|array|min:1',
                 'sections.*.questions.*.question_text' => 'required|string',
-                'sections.*.questions.*.type' => 'required|in:scale,mcq,text',
+                'sections.*.questions.*.type' => 'required|in:scale,mcq,text,date',
                 'sections.*.questions.*.options' => 'nullable|array',
             ]);
         }
@@ -618,7 +618,7 @@ class SurveyAdminController extends Controller
             ];
         }
 
-        if ($question->type === 'text') {
+        if (in_array($question->type, ['text', 'date'], true)) {
             $comments = Answer::where('question_id', $question->id)
                 ->whereHas('response', function ($query) use ($survey) {
                     $query->where('survey_id', $survey->id);
@@ -627,9 +627,9 @@ class SurveyAdminController extends Controller
                 ->pluck('answer_text')
                 ->filter()
                 ->values();
-
+        
             return [
-                'type' => 'text',
+                'type' => $question->type,
                 'total_answers' => $comments->count(),
                 'average' => null,
                 'distribution' => [],

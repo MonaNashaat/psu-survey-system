@@ -176,7 +176,24 @@
         font-weight: 800;
         font-family: 'Alexandria', sans-serif;
     }
+    .date-input {
+    width: 100%;
+    max-width: 360px;
+    border: 1px solid #d5dbe7;
+    border-radius: 14px;
+    padding: 13px 14px;
+    font-family: 'Alexandria', sans-serif;
+    font-size: 14px;
+    color: #1f2a44;
+    background: #fff;
+    direction: rtl;
+}
 
+.date-input:focus {
+    outline: none;
+    border-color: #8d9bd0;
+    box-shadow: 0 0 0 3px rgba(40, 51, 95, 0.08);
+}
     @media (max-width: 800px) {
         .meta-grid {
             grid-template-columns: 1fr;
@@ -272,8 +289,17 @@
                                     </label>
                                 @endforeach
                             </div>
+
                         @elseif($question->type === 'text')
                             <textarea name="answers[{{ $question->id }}]">{{ old('answers.' . $question->id) }}</textarea>
+
+                        @elseif($question->type === 'date')
+                            <input
+                                type="date"
+                                name="answers[{{ $question->id }}]"
+                                value="{{ old('answers.' . $question->id) }}"
+                                class="date-input"
+                            >
                         @endif
 
                         @error('answers.' . $question->id)
@@ -289,17 +315,50 @@
                 <h3 class="standalone-title">تعليقات إضافية</h3>
 
                 @foreach($standaloneQuestions as $question)
-                    <div class="question" style="padding: 0 0 18px 0; border-top:0;">
-                        <div class="question-text">
-                            {{ $question->question_text }}
-                        </div>
-
-                        <textarea name="answers[{{ $question->id }}]">{{ old('answers.' . $question->id) }}</textarea>
-
-                        @error('answers.' . $question->id)
-                            <div class="error">{{ $message }}</div>
-                        @enderror
+                <div class="question" style="padding: 0 0 18px 0; border-top:0;">
+                    <div class="question-text">
+                        {{ $question->question_text }}
+                
+                        @if($question->is_required)
+                            <span class="required-star">*</span>
+                        @endif
                     </div>
+                
+                    @if($question->type === 'mcq' || $question->type === 'scale')
+                
+                        <div class="options">
+                            @foreach($question->options as $option)
+                                <label class="option-label">
+                                    <input
+                                        type="radio"
+                                        name="answers[{{ $question->id }}]"
+                                        value="{{ $option->id }}"
+                                        {{ old('answers.' . $question->id) == $option->id ? 'checked' : '' }}
+                                    >
+                                    <span>{{ $option->option_text }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                
+                    @elseif($question->type === 'text')
+                
+                        <textarea name="answers[{{ $question->id }}]">{{ old('answers.' . $question->id) }}</textarea>
+                
+                    @elseif($question->type === 'date')
+                
+                        <input
+                            type="date"
+                            name="answers[{{ $question->id }}]"
+                            value="{{ old('answers.' . $question->id) }}"
+                            class="date-input"
+                        >
+                
+                    @endif
+                
+                    @error('answers.' . $question->id)
+                        <div class="error">{{ $message }}</div>
+                    @enderror
+                </div>
                 @endforeach
             </div>
         @endif

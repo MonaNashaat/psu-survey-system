@@ -302,23 +302,68 @@
     }
 
     .option-input {
-        margin-bottom: 8px;
-    }
+    margin-bottom: 8px;
+}
+
+.mcq-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mcq-option input {
+    flex: 1;
+}
+
+.remove-option-btn {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+
+    background: #fff1f2;
+    color: #dc2626;
+
+    font-size: 22px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.remove-option-btn:hover {
+    background: #fee2e2;
+}
+
+.add-option-btn {
+    margin-top: 8px;
+}
 </style>
 @endpush
 
 @push('scripts')
 <script>
     let sectionIndex = 0;
+    const questionCounters = {};
 
     function removeElement(id) {
         const el = document.getElementById(id);
-        if (el) el.remove();
+
+        if (el) {
+            el.remove();
+        }
     }
 
     function addSection(title = '', questions = []) {
         const wrapper = document.getElementById('sections-wrapper');
         const currentSectionIndex = sectionIndex;
+
+        questionCounters[currentSectionIndex] = 0;
 
         const html = `
             <div class="section-box" id="section-${currentSectionIndex}">
@@ -326,14 +371,32 @@
 
                 <div class="form-group">
                     <label class="form-label">عنوان المحور</label>
-                    <input type="text" name="sections[${currentSectionIndex}][title]" value="${escapeHtml(title)}">
+
+                    <input
+                        type="text"
+                        name="sections[${currentSectionIndex}][title]"
+                        value="${escapeHtml(title)}"
+                    >
                 </div>
 
                 <div id="questions-wrapper-${currentSectionIndex}"></div>
 
                 <div class="page-actions">
-                    <button type="button" class="btn btn-primary" onclick="addQuestion(${currentSectionIndex})">إضافة سؤال</button>
-                    <button type="button" class="btn btn-danger" onclick="removeElement('section-${currentSectionIndex}')">حذف المحور</button>
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="addQuestion(${currentSectionIndex})"
+                    >
+                        إضافة سؤال
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        onclick="removeElement('section-${currentSectionIndex}')"
+                    >
+                        حذف المحور
+                    </button>
                 </div>
             </div>
         `;
@@ -353,80 +416,326 @@
         sectionIndex++;
     }
 
-    function addQuestion(sectionIdx, questionText = '', questionType = 'scale', isRequired = true, options = []) {
-        const wrapper = document.getElementById(`questions-wrapper-${sectionIdx}`);
-        const questionCount = wrapper.querySelectorAll('.question-box').length;
+    function addQuestion(
+        sectionIdx,
+        questionText = '',
+        questionType = 'scale',
+        isRequired = true,
+        options = []
+    ) {
+        const wrapper = document.getElementById(
+            `questions-wrapper-${sectionIdx}`
+        );
 
-        let optionsHtml = '';
-
-        if (options.length === 0 && (questionType === 'scale' || questionType === 'mcq')) {
-            options = questionType === 'scale'
-                ? ['غير موافق بشدة', 'غير موافق', 'محايد', 'أوافق', 'أوافق بشدة']
-                : ['', ''];
+        if (!wrapper) {
+            return;
         }
 
-        options.forEach(option => {
-            optionsHtml += `
-                <div class="option-input">
-                    <input type="text" name="sections[${sectionIdx}][questions][${questionCount}][options][]" value="${escapeHtml(option)}">
-                </div>
-            `;
-        });
+        if (typeof questionCounters[sectionIdx] === 'undefined') {
+            questionCounters[sectionIdx] = 0;
+        }
+
+        const questionIdx = questionCounters[sectionIdx]++;
 
         const html = `
-            <div class="question-box" id="section-${sectionIdx}-question-${questionCount}">
+            <div
+                class="question-box"
+                id="section-${sectionIdx}-question-${questionIdx}"
+            >
                 <div class="form-group">
                     <label class="form-label">نص السؤال</label>
-                    <textarea name="sections[${sectionIdx}][questions][${questionCount}][question_text]">${escapeHtml(questionText)}</textarea>
+
+                    <textarea
+                        name="sections[${sectionIdx}][questions][${questionIdx}][question_text]"
+                    >${escapeHtml(questionText)}</textarea>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">نوع السؤال</label>
-                    <select name="sections[${sectionIdx}][questions][${questionCount}][type]" onchange="toggleOptions(this, ${sectionIdx}, ${questionCount})">
-                        <option value="scale" ${questionType === 'scale' ? 'selected' : ''}>تقييم 1-5</option>
-                        <option value="mcq" ${questionType === 'mcq' ? 'selected' : ''}>اختيار من متعدد</option>
-                        <option value="text" ${questionType === 'text' ? 'selected' : ''}>نص مفتوح</option>
+
+                    <select
+                        name="sections[${sectionIdx}][questions][${questionIdx}][type]"
+                        onchange="toggleOptions(this, ${sectionIdx}, ${questionIdx})"
+                    >
+                        <option value="scale"
+                            ${questionType === 'scale' ? 'selected' : ''}>
+                            تقييم 1-5
+                        </option>
+
+                        <option value="mcq"
+                            ${questionType === 'mcq' ? 'selected' : ''}>
+                            اختيار من متعدد
+                        </option>
+
+                        <option value="text"
+                            ${questionType === 'text' ? 'selected' : ''}>
+                            نص مفتوح
+                        </option>
+
+                        <option value="date"
+                            ${questionType === 'date' ? 'selected' : ''}>
+                            تاريخ
+                        </option>
                     </select>
                 </div>
 
                 <div class="checkbox-row">
-                    <input type="checkbox" id="required-${sectionIdx}-${questionCount}" name="sections[${sectionIdx}][questions][${questionCount}][is_required]" ${isRequired ? 'checked' : ''}>
-                    <label for="required-${sectionIdx}-${questionCount}" style="margin:0;">سؤال إجباري</label>
+                    <input
+                        type="checkbox"
+                        id="required-${sectionIdx}-${questionIdx}"
+                        name="sections[${sectionIdx}][questions][${questionIdx}][is_required]"
+                        ${isRequired ? 'checked' : ''}
+                    >
+
+                    <label
+                        for="required-${sectionIdx}-${questionIdx}"
+                        style="margin:0;"
+                    >
+                        سؤال إجباري
+                    </label>
                 </div>
 
-                <div class="form-group options-box" id="options-box-${sectionIdx}-${questionCount}" style="${questionType === 'text' ? 'display:none;' : ''}">
+                <div
+                    class="form-group options-box"
+                    id="options-box-${sectionIdx}-${questionIdx}"
+                >
                     <label class="form-label">الخيارات</label>
-                    ${optionsHtml}
-                    <button type="button" class="btn btn-secondary" onclick="addOption(${sectionIdx}, ${questionCount})">إضافة اختيار</button>
+
+                    <div
+                        class="options-list"
+                        id="options-list-${sectionIdx}-${questionIdx}"
+                    ></div>
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary add-option-btn"
+                        id="add-option-btn-${sectionIdx}-${questionIdx}"
+                        onclick="addOption(${sectionIdx}, ${questionIdx})"
+                    >
+                        + إضافة اختيار
+                    </button>
                 </div>
 
                 <div class="page-actions">
-                    <button type="button" class="btn btn-danger" onclick="removeElement('section-${sectionIdx}-question-${questionCount}')">حذف السؤال</button>
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        onclick="removeElement('section-${sectionIdx}-question-${questionIdx}')"
+                    >
+                        حذف السؤال
+                    </button>
                 </div>
             </div>
         `;
 
         wrapper.insertAdjacentHTML('beforeend', html);
+
+        initialiseQuestionOptions(
+            sectionIdx,
+            questionIdx,
+            questionType,
+            options
+        );
     }
 
-    function addOption(sectionIdx, questionIdx) {
-        const box = document.getElementById(`options-box-${sectionIdx}-${questionIdx}`);
-        const btn = box.querySelector('button');
-        const div = document.createElement('div');
+    function initialiseQuestionOptions(
+        sectionIdx,
+        questionIdx,
+        questionType,
+        options = []
+    ) {
+        const box = document.getElementById(
+            `options-box-${sectionIdx}-${questionIdx}`
+        );
 
-        div.className = 'option-input';
-        div.innerHTML = `<input type="text" name="sections[${sectionIdx}][questions][${questionIdx}][options][]" value="">`;
+        const list = document.getElementById(
+            `options-list-${sectionIdx}-${questionIdx}`
+        );
 
-        box.insertBefore(div, btn);
+        const addButton = document.getElementById(
+            `add-option-btn-${sectionIdx}-${questionIdx}`
+        );
+
+        if (!box || !list || !addButton) {
+            return;
+        }
+
+        list.innerHTML = '';
+
+        /*
+         * النص والتاريخ لا يحتاجان اختيارات.
+         */
+        if (questionType === 'text' || questionType === 'date') {
+            box.style.display = 'none';
+            return;
+        }
+
+        box.style.display = 'block';
+
+        /*
+         * Scale
+         */
+        if (questionType === 'scale') {
+            addButton.style.display = 'none';
+
+            const scaleOptions = options.length
+                ? options
+                : [
+                    'غير موافق بشدة',
+                    'غير موافق',
+                    'محايد',
+                    'أوافق',
+                    'أوافق بشدة'
+                ];
+
+            setScaleOptions(
+                sectionIdx,
+                questionIdx,
+                scaleOptions
+            );
+
+            return;
+        }
+
+        /*
+         * Multiple Choice
+         */
+        if (questionType === 'mcq') {
+            addButton.style.display = 'inline-flex';
+
+            const mcqOptions = options.length
+                ? options
+                : ['اختيار 1', 'اختيار 2'];
+
+            mcqOptions.forEach(option => {
+                addOption(
+                    sectionIdx,
+                    questionIdx,
+                    option
+                );
+            });
+        }
     }
 
     function toggleOptions(selectEl, sectionIdx, questionIdx) {
-        const box = document.getElementById(`options-box-${sectionIdx}-${questionIdx}`);
-        box.style.display = selectEl.value === 'text' ? 'none' : 'block';
+        const questionType = selectEl.value;
+
+        /*
+         * عند تغيير نوع السؤال نعيد بناء
+         * الاختيارات بما يناسب النوع الجديد.
+         */
+        initialiseQuestionOptions(
+            sectionIdx,
+            questionIdx,
+            questionType,
+            []
+        );
+    }
+
+    function setScaleOptions(
+        sectionIdx,
+        questionIdx,
+        options = []
+    ) {
+        const list = document.getElementById(
+            `options-list-${sectionIdx}-${questionIdx}`
+        );
+
+        const addButton = document.getElementById(
+            `add-option-btn-${sectionIdx}-${questionIdx}`
+        );
+
+        if (!list) {
+            return;
+        }
+
+        if (addButton) {
+            addButton.style.display = 'none';
+        }
+
+        list.innerHTML = '';
+
+        options.forEach(optionText => {
+            list.insertAdjacentHTML(
+                'beforeend',
+                `
+                    <div class="option-input">
+                        <input
+                            type="text"
+                            name="sections[${sectionIdx}][questions][${questionIdx}][options][]"
+                            value="${escapeHtml(optionText)}"
+                        >
+                    </div>
+                `
+            );
+        });
+    }
+
+    function addOption(
+        sectionIdx,
+        questionIdx,
+        value = ''
+    ) {
+        const list = document.getElementById(
+            `options-list-${sectionIdx}-${questionIdx}`
+        );
+
+        if (!list) {
+            return;
+        }
+
+        const html = `
+            <div class="option-input mcq-option">
+                <input
+                    type="text"
+                    name="sections[${sectionIdx}][questions][${questionIdx}][options][]"
+                    value="${escapeHtml(value)}"
+                    placeholder="اكتب الاختيار"
+                >
+
+                <button
+                    type="button"
+                    class="remove-option-btn"
+                    onclick="removeOption(this)"
+                    title="حذف الاختيار"
+                >
+                    ×
+                </button>
+            </div>
+        `;
+
+        list.insertAdjacentHTML('beforeend', html);
+    }
+
+    function removeOption(button) {
+        const optionRow = button.closest('.option-input');
+
+        if (!optionRow) {
+            return;
+        }
+
+        const list = optionRow.parentElement;
+
+        const optionsCount = list.querySelectorAll(
+            '.option-input'
+        ).length;
+
+        if (optionsCount <= 2) {
+            alert(
+                'يجب أن يحتوي سؤال الاختيار من متعدد على اختيارين على الأقل.'
+            );
+
+            return;
+        }
+
+        optionRow.remove();
     }
 
     function escapeHtml(text) {
-        if (text === null || text === undefined) return '';
+        if (text === null || text === undefined) {
+            return '';
+        }
+
         return String(text)
             .replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
@@ -439,12 +748,17 @@
         @foreach($survey->sections as $section)
             {
                 title: @json($section->title),
+
                 questions: [
                     @foreach($section->questions as $question)
                         {
                             question_text: @json($question->question_text),
+
                             type: @json($question->type),
-                            is_required: {{ $question->is_required ? 'true' : 'false' }},
+
+                            is_required:
+                                {{ $question->is_required ? 'true' : 'false' }},
+
                             options: [
                                 @foreach($question->options as $option)
                                     @json($option->option_text),
@@ -458,7 +772,12 @@
     ];
 
     if (existingSections.length) {
-        existingSections.forEach(section => addSection(section.title, section.questions));
+        existingSections.forEach(section => {
+            addSection(
+                section.title,
+                section.questions
+            );
+        });
     } else {
         addSection();
     }
