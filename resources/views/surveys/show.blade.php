@@ -218,24 +218,16 @@
 </style>
 @endpush
 
+@if($isCourseSurvey)
 <div class="guest-card survey-header">
-    {{-- <div class="survey-badge">
-        {{ $isCourseSurvey ? 'استبيان مرتبط بمادة' : 'استبيان عام' }}
-    </div> --}}
+    
     <p class="survey-description">{{ config('app.name', 'منصة الاستبيانات') }}</p>
 
-    {{-- <h1 class="survey-title">{{ $survey->title }}</h1> --}}
 
-    {{-- @if($survey->description)
-        
-    @endif --}}
-
-    {{-- <h1>{{ config('app.name', 'منصة الاستبيانات') }}</h1> --}}
-                    {{-- <p>وحدة ضمان الجودة والاعتماد</p> --}}
 
 
     <div class="meta-grid">
-        @if($isCourseSurvey)
+
             <div class="meta-item"><strong>الكلية:</strong> {{ $survey->courseOffering?->course?->department?->faculty?->name_ar ?? '-' }}</div>
             <div class="meta-item"><strong>القسم:</strong> {{ $survey->courseOffering?->course?->department?->name_ar ?? '-' }}</div>
             <div class="meta-item"><strong>اسم المقرر:</strong> {{ $survey->courseOffering?->course?->name_ar ?? ($survey->course_title ?? '-') }}</div>
@@ -245,11 +237,10 @@
             <div class="meta-item"><strong>الفرقة:</strong> {{ $survey->courseOffering?->level ?? ($survey->level ?? '-') }}</div>
             <div class="meta-item"><strong>القائم على التدريس:</strong> {{ $survey->courseOffering?->instructor_name ?? '-' }}</div>
             <div class="meta-item"><strong>الهيئة المعاونة:</strong> {{ $survey->courseOffering?->assistant_name ?? '-' }}</div>
-        @else
-            {{-- <div class="meta-item"><strong>نوع الاستبيان:</strong> عام</div> --}}
-        @endif
+       
     </div>
 </div>
+@endif
 
 @if(session('duplicate_error'))
     <div class="alert alert-danger">
