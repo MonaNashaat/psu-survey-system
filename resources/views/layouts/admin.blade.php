@@ -53,7 +53,7 @@
                     </a>
                 @endunless
             </div>
-
+            @unless(auth()->user()->isPresidencyAdmin())
             <div class="sidebar-section">
                 <div class="sidebar-section-title">الهيكل الأكاديمي</div>
 
@@ -80,7 +80,7 @@
                     <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">إدارة المستخدمين</a>
                 @endif
             </div>
-
+            @endunless
             <div class="sidebar-section sidebar-bottom">
                 <div class="sidebar-section-title">الحساب</div>
 
