@@ -222,12 +222,7 @@
 <div class="guest-card survey-header">
     
     <p class="survey-description">{{ config('app.name', 'منصة الاستبيانات') }}</p>
-
-
-
-
     <div class="meta-grid">
-
             <div class="meta-item"><strong>الكلية:</strong> {{ $survey->courseOffering?->course?->department?->faculty?->name_ar ?? '-' }}</div>
             <div class="meta-item"><strong>القسم:</strong> {{ $survey->courseOffering?->course?->department?->name_ar ?? '-' }}</div>
             <div class="meta-item"><strong>اسم المقرر:</strong> {{ $survey->courseOffering?->course?->name_ar ?? ($survey->course_title ?? '-') }}</div>
