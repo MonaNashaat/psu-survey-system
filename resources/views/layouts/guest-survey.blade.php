@@ -180,13 +180,13 @@
                     <img src="{{ asset('images/university-logo.png') }}" alt="PSU Logo" >
                 </div>
                 <div class="guest-brand">
-                    <h1 class="survey-title">{{ $survey->title }}</h1>
+                    <h1>{{ $survey->title }}</h1>
 
-                    
-                    <h1>{{ config('app.name', 'منصة الاستبيانات') }}</h1>
+
+                    {{-- <h1>{{ config('app.name', 'منصة الاستبيانات') }}</h1> --}}
                     {{-- <p>وحدة ضمان الجودة والاعتماد</p> --}}
                     <div class="footer-note" style="color:white">
-                    مركز نظم وتكنولوجيا المعلومات - جامعة بورسعيد
+                    جامعة بورسعيد
                     </div>
                 </div>
             </div>

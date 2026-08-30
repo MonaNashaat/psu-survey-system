@@ -223,11 +223,11 @@
         {{ $isCourseSurvey ? 'استبيان مرتبط بمادة' : 'استبيان عام' }}
     </div> --}}
 
-    <h1 class="survey-title">{{ $survey->title }}</h1>
+    {{-- <h1 class="survey-title">{{ $survey->title }}</h1> --}}
 
-    @if($survey->description)
+    {{-- @if($survey->description)
         <p class="survey-description">{{ $survey->description }}</p>
-    @endif
+    @endif --}}
 
     <div class="meta-grid">
         @if($isCourseSurvey)
