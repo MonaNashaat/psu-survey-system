@@ -222,12 +222,16 @@
     {{-- <div class="survey-badge">
         {{ $isCourseSurvey ? 'استبيان مرتبط بمادة' : 'استبيان عام' }}
     </div> --}}
-
+    <p class="survey-description">{{ {{ config('app.name', 'منصة الاستبيانات') }} }}</p>
     {{-- <h1 class="survey-title">{{ $survey->title }}</h1> --}}
 
     {{-- @if($survey->description)
-        <p class="survey-description">{{ $survey->description }}</p>
+        
     @endif --}}
+
+    {{-- <h1>{{ config('app.name', 'منصة الاستبيانات') }}</h1> --}}
+                    {{-- <p>وحدة ضمان الجودة والاعتماد</p> --}}
+
 
     <div class="meta-grid">
         @if($isCourseSurvey)
