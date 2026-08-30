@@ -180,6 +180,9 @@
                     <img src="{{ asset('images/university-logo.png') }}" alt="PSU Logo" >
                 </div>
                 <div class="guest-brand">
+                    <h1 class="survey-title">{{ $survey->title }}</h1>
+
+                    
                     <h1>{{ config('app.name', 'منصة الاستبيانات') }}</h1>
                     {{-- <p>وحدة ضمان الجودة والاعتماد</p> --}}
                     <div class="footer-note" style="color:white">

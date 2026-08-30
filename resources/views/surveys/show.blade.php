@@ -219,9 +219,9 @@
 @endpush
 
 <div class="guest-card survey-header">
-    <div class="survey-badge">
+    {{-- <div class="survey-badge">
         {{ $isCourseSurvey ? 'استبيان مرتبط بمادة' : 'استبيان عام' }}
-    </div>
+    </div> --}}
 
     <h1 class="survey-title">{{ $survey->title }}</h1>
 
@@ -241,7 +241,7 @@
             <div class="meta-item"><strong>القائم على التدريس:</strong> {{ $survey->courseOffering?->instructor_name ?? '-' }}</div>
             <div class="meta-item"><strong>الهيئة المعاونة:</strong> {{ $survey->courseOffering?->assistant_name ?? '-' }}</div>
         @else
-            <div class="meta-item"><strong>نوع الاستبيان:</strong> عام</div>
+            {{-- <div class="meta-item"><strong>نوع الاستبيان:</strong> عام</div> --}}
         @endif
     </div>
 </div>
@@ -364,7 +364,7 @@
         @endif
 
         <div class="submit-area">
-            <button class="submit-btn" type="submit">إرسال الاستبيان</button>
+            <button class="submit-btn" type="submit">إرسال</button>
         </div>
     </form>
 </div>

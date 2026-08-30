@@ -169,13 +169,13 @@ class SurveyController extends Controller
             return;
         }
 
-        if ($question->type === 'text') {
+        if (in_array($question->type, ['text', 'date'], true)) {
             Answer::create([
                 'survey_response_id' => $responseId,
                 'question_id' => $question->id,
                 'answer_text' => $value,
             ]);
-
+        
             return;
         }
 
