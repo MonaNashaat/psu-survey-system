@@ -152,8 +152,9 @@ class SurveyController extends Controller
         $cookieName = 'survey_' . $survey->id . '_submitted';
 
         return redirect()
-            ->route('surveys.thankyou')
-            ->cookie($cookieName, '1', 60 * 24 * 365);
+    ->route('surveys.thankyou')
+    ->with('survey_title', $survey->title)
+    ->cookie($cookieName, '1', 60 * 24 * 365);
     }
 
     public function thankyou()

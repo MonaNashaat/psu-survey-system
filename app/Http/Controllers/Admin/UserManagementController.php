@@ -143,7 +143,7 @@ class UserManagementController extends Controller
 
         $validated = $request->validate($rules);
 
-        if ($validated['role'] === 'university_admin') {
+        if (in_array($validated['role'], ['university_admin', 'presidency_admin'], true)) {
             $validated['faculty_id'] = null;
             $validated['department_id'] = null;
         }

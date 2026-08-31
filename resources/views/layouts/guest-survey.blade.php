@@ -181,7 +181,9 @@
                     <img src="{{ asset('images/university-logo.png') }}" alt="PSU Logo" >
                 </div>
                 <div class="guest-brand">
-                    <h1 style="text-align: center;">{{ $survey->title }}</h1>
+                    <h1 style="text-align: center;">
+                        {{ $survey->title ?? session('survey_title', config('app.name', 'منصة الاستبيانات')) }}
+                    </h1>
                     <div class="footer-note" style="color:white">
                     جامعة بورسعيد
                     </div>

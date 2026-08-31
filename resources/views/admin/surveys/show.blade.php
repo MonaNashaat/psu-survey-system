@@ -134,13 +134,13 @@
                     <div><strong>الوصف:</strong> {{ $survey->description ?: '—' }}</div>
                     <div><strong>المستوى:</strong> {{ $scopeLabel }}</div>
                     @if($survey->scope_level === 'university')
-    <div>
-        <strong>الجهة:</strong>
-        {{ $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
-            ? 'المكتب الفني لرئيس الجامعة'
-            : 'مركز ضمان الجودة والتأهيل للاعتماد' }}
-    </div>
-@endif
+                        <div>
+                            <strong>الجهة:</strong>
+                            {{ $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
+                                ? 'المكتب الفني لرئيس الجامعة'
+                                : 'مركز ضمان الجودة والتأهيل للاعتماد' }}
+                        </div>
+                    @endif
                     <div><strong>نوع الربط:</strong> {{ $isCourseSurvey ? 'مقرر' : 'عام' }}</div>
                     <div>
                         <strong>الحالة:</strong>
