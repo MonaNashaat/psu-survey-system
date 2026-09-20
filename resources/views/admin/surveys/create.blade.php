@@ -417,8 +417,10 @@
                         onchange="toggleOptions(this, ${sectionIdx}, ${questionIdx})"
                     >
                         <option value="scale">تقييم 1-5</option>
-                        <option value="mcq">اختيار من متعدد</option>
-                        <option value="text">نص مفتوح</option>
+                        <option value="mcq">اختيار واحد</option>
+                        <option value="checkbox">اختيارات متعددة</option>
+                        <option value="short_text">إجابة قصيرة</option>
+                        <option value="text">إجابة طويلة</option>
                         <option value="date">تاريخ</option>
                     </select>
                 </div>
@@ -502,9 +504,14 @@
          * Text + Date
          * لا يحتاجان اختيارات.
          */
-        if (type === 'text' || type === 'date') {
+         if (
+            type === 'text' ||
+            type === 'short_text' ||
+            type === 'date'
+        ) {
             box.style.display = 'none';
             list.innerHTML = '';
+            addButton.style.display = 'none';
             return;
         }
 
@@ -523,7 +530,7 @@
         /*
          * Multiple Choice
          */
-        if (type === 'mcq') {
+         if (type === 'mcq' || type === 'checkbox') {
             list.innerHTML = '';
             addButton.style.display = 'inline-flex';
 

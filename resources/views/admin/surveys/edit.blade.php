@@ -464,12 +464,22 @@
 
                         <option value="mcq"
                             ${questionType === 'mcq' ? 'selected' : ''}>
-                            اختيار من متعدد
+                            اختيار واحد
+                        </option>
+
+                        <option value="checkbox"
+                            ${questionType === 'checkbox' ? 'selected' : ''}>
+                            اختيارات متعددة
+                        </option>
+
+                        <option value="short_text"
+                            ${questionType === 'short_text' ? 'selected' : ''}>
+                            إجابة قصيرة
                         </option>
 
                         <option value="text"
                             ${questionType === 'text' ? 'selected' : ''}>
-                            نص مفتوح
+                            إجابة طويلة
                         </option>
 
                         <option value="date"
@@ -565,8 +575,13 @@
         /*
          * النص والتاريخ لا يحتاجان اختيارات.
          */
-        if (questionType === 'text' || questionType === 'date') {
+         if (
+            questionType === 'text' ||
+            questionType === 'short_text' ||
+            questionType === 'date'
+        ) {
             box.style.display = 'none';
+            addButton.style.display = 'none';
             return;
         }
 

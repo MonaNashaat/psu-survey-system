@@ -380,12 +380,21 @@ class SurveyAdminController extends Controller
         $responsesChartData = $surveys->pluck('responses_count')->values();
 
         $averageRatings = [];
+
         foreach ($surveys as $survey) {
+
             $avg = Answer::whereHas('response', function ($query) use ($survey) {
                 $query->where('survey_id', $survey->id);
-            })->whereNotNull('answer_value')->avg('answer_value');
+            })
+                ->whereHas('question', function ($query) {
+                    $query->where('type', 'scale');
+                })
+                ->whereNotNull('answer_value')
+                ->avg('answer_value');
 
-            $averageRatings[] = $avg ? round($avg, 2) : 0;
+            $averageRatings[] = $avg !== null
+                ? round((float) $avg, 2)
+                : 0;
         }
 
         return view('admin.dashboard', compact(
@@ -427,7 +436,7 @@ class SurveyAdminController extends Controller
                 'sections.*.title' => 'required|string|max:255',
                 'sections.*.questions' => 'required|array|min:1',
                 'sections.*.questions.*.question_text' => 'required|string',
-                'sections.*.questions.*.type' => 'required|in:scale,mcq,text,date',
+                'sections.*.questions.*.type' => 'required|in:scale,mcq,checkbox,text,short_text,date',
                 'sections.*.questions.*.options' => 'nullable|array',
             ]);
         }
@@ -504,7 +513,7 @@ class SurveyAdminController extends Controller
                     'display_order' => $questionIndex + 1,
                 ]);
 
-                if (in_array($questionData['type'], ['scale', 'mcq'], true)) {
+                if (in_array($questionData['type'], ['scale', 'mcq', 'checkbox'], true)) {
                     $options = $questionData['options'] ?? [];
 
                     foreach ($options as $optionIndex => $optionText) {
@@ -590,19 +599,55 @@ class SurveyAdminController extends Controller
 
     private function buildQuestionStats($question, Survey $survey): array
     {
-        if (in_array($question->type, ['scale', 'mcq'], true)) {
+        /*
+        |--------------------------------------------------------------------------
+        | Scale / MCQ / Checkbox
+        |--------------------------------------------------------------------------
+        |
+        | scale    = اختيار واحد رقمي
+        | mcq      = اختيار واحد
+        | checkbox = أكثر من اختيار
+        |
+        */
+
+        if (in_array($question->type, ['scale', 'mcq', 'checkbox'], true)) {
+
             $answers = Answer::where('question_id', $question->id)
                 ->whereHas('response', function ($query) use ($survey) {
                     $query->where('survey_id', $survey->id);
                 })
                 ->get();
 
-            $totalAnswers = $answers->count();
-            $average = $answers->whereNotNull('answer_value')->avg('answer_value');
+            /*
+             * في checkbox قد يكون للطالب أكثر من Answer لنفس السؤال.
+             *
+             * لذلك total_answers يجب أن يمثل عدد المشاركين الذين
+             * أجابوا السؤال، وليس عدد الاختيارات التي تم تحديدها.
+             */
+            if ($question->type === 'checkbox') {
+                $totalAnswers = $answers
+                    ->pluck('survey_response_id')
+                    ->unique()
+                    ->count();
+            } else {
+                $totalAnswers = $answers->count();
+            }
+
+            /*
+             * المتوسط له معنى فقط في scale.
+             */
+            $average = $question->type === 'scale'
+                ? $answers->whereNotNull('answer_value')->avg('answer_value')
+                : null;
 
             $distribution = [];
+
             foreach ($question->options as $option) {
-                $count = $answers->where('question_option_id', $option->id)->count();
+
+                $count = $answers
+                    ->where('question_option_id', $option->id)
+                    ->count();
+
                 $distribution[] = [
                     'label' => $option->option_text,
                     'count' => $count,
@@ -618,16 +663,26 @@ class SurveyAdminController extends Controller
             ];
         }
 
-        if (in_array($question->type, ['text', 'date'], true)) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Text / Short Text / Date
+        |--------------------------------------------------------------------------
+        */
+
+        if (in_array($question->type, ['text', 'short_text', 'date'], true)) {
+
             $comments = Answer::where('question_id', $question->id)
                 ->whereHas('response', function ($query) use ($survey) {
                     $query->where('survey_id', $survey->id);
                 })
                 ->whereNotNull('answer_text')
                 ->pluck('answer_text')
-                ->filter()
+                ->filter(function ($value) {
+                    return filled($value);
+                })
                 ->values();
-        
+
             return [
                 'type' => $question->type,
                 'total_answers' => $comments->count(),
@@ -636,6 +691,13 @@ class SurveyAdminController extends Controller
                 'comments' => $comments,
             ];
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Unknown Question Type
+        |--------------------------------------------------------------------------
+        */
 
         return [
             'type' => $question->type,
@@ -653,13 +715,12 @@ class SurveyAdminController extends Controller
         if ($user->isPresidencyAdmin()) {
 
             $faculties = collect();
-    
+
             $departments = collect();
-    
+
             $courses = collect();
-    
+
             $courseOfferings = collect();
-    
         } else if ($user->isUniversityAdmin()) {
             $faculties = Faculty::orderBy('name_ar')->get();
             $departments = Department::with('faculty')->orderBy('name_ar')->get();
@@ -870,10 +931,10 @@ class SurveyAdminController extends Controller
             ) {
                 return;
             }
-        
+
             abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
         }
-        
+
         if ($user->isPresidencyAdmin()) {
             if (
                 $survey->scope_level === 'university'
@@ -881,7 +942,7 @@ class SurveyAdminController extends Controller
             ) {
                 return;
             }
-        
+
             abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
         }
 
@@ -924,10 +985,10 @@ class SurveyAdminController extends Controller
             ) {
                 return;
             }
-        
+
             abort(403, 'ليس لديك صلاحية تعديل هذا الاستبيان');
         }
-        
+
         if ($user->isPresidencyAdmin()) {
             if (
                 $survey->scope_level === 'university'
@@ -935,7 +996,7 @@ class SurveyAdminController extends Controller
             ) {
                 return;
             }
-        
+
             abort(403, 'ليس لديك صلاحية تعديل هذا الاستبيان');
         }
 

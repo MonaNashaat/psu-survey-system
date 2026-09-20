@@ -160,7 +160,7 @@ class SurveyTemplateController extends Controller
             'sections.*.title' => 'required|string|max:255',
             'sections.*.questions' => 'required|array|min:1',
             'sections.*.questions.*.question_text' => 'required|string',
-            'sections.*.questions.*.type' => 'required|in:scale,mcq,text',
+            'sections.*.questions.*.type' => 'required|in:scale,mcq,checkbox,text,short_text,date',
             'sections.*.questions.*.options' => 'nullable|array',
         ];
 
@@ -229,7 +229,7 @@ class SurveyTemplateController extends Controller
                     'display_order' => $questionIndex + 1,
                 ]);
 
-                if (in_array($questionData['type'], ['scale', 'mcq'], true)) {
+                if (in_array($questionData['type'], ['scale', 'mcq', 'checkbox'], true)) {
                     $options = $questionData['options'] ?? [];
 
                     foreach ($options as $optionIndex => $optionText) {

@@ -7,7 +7,7 @@ use App\Models\Survey;
 use App\Models\SurveyResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
+use Illuminate\Validation\Rule;
 class SurveyController extends Controller
 {
     public function show(Request $request, $id)
@@ -51,15 +51,30 @@ class SurveyController extends Controller
         foreach ($survey->sections as $section) {
             foreach ($section->questions as $question) {
                 $key = 'answers.' . $question->id;
-                if ($question->type === 'text') {
+                if (in_array($question->type, ['text', 'short_text'], true)) {
+
                     $rules[$key] = $question->is_required
                         ? 'required|string'
                         : 'nullable|string';
                 } elseif ($question->type === 'date') {
+
                     $rules[$key] = $question->is_required
                         ? 'required|date'
                         : 'nullable|date';
+                } elseif ($question->type === 'checkbox') {
+
+                    $rules[$key] = $question->is_required
+                        ? 'required|array|min:1'
+                        : 'nullable|array';
+
+                        $rules[$key . '.*'] = [
+                            'integer',
+                            'distinct',
+                            Rule::exists('question_options', 'id')
+                                ->where('question_id', $question->id),
+                        ];
                 } else {
+
                     $rules[$key] = $question->is_required
                         ? 'required'
                         : 'nullable';
@@ -69,15 +84,33 @@ class SurveyController extends Controller
 
         foreach ($survey->questions->whereNull('survey_section_id') as $question) {
             $key = 'answers.' . $question->id;
-            if ($question->type === 'text') {
+            if (in_array($question->type, ['text', 'short_text'], true)) {
+
                 $rules[$key] = $question->is_required
                     ? 'required|string'
                     : 'nullable|string';
+            
             } elseif ($question->type === 'date') {
+            
                 $rules[$key] = $question->is_required
                     ? 'required|date'
                     : 'nullable|date';
+            
+            } elseif ($question->type === 'checkbox') {
+            
+                $rules[$key] = $question->is_required
+                    ? 'required|array|min:1'
+                    : 'nullable|array';
+            
+                    $rules[$key . '.*'] = [
+                        'integer',
+                        'distinct',
+                        Rule::exists('question_options', 'id')
+                            ->where('question_id', $question->id),
+                    ];
+            
             } else {
+            
                 $rules[$key] = $question->is_required
                     ? 'required'
                     : 'nullable';
@@ -152,9 +185,9 @@ class SurveyController extends Controller
         $cookieName = 'survey_' . $survey->id . '_submitted';
 
         return redirect()
-    ->route('surveys.thankyou')
-    ->with('survey_title', $survey->title)
-    ->cookie($cookieName, '1', 60 * 24 * 365);
+            ->route('surveys.thankyou')
+            ->with('survey_title', $survey->title)
+            ->cookie($cookieName, '1', 60 * 24 * 365);
     }
 
     public function thankyou()
@@ -170,16 +203,36 @@ class SurveyController extends Controller
             return;
         }
 
-        if (in_array($question->type, ['text', 'date'], true)) {
+        if (in_array($question->type, ['text', 'short_text', 'date'], true)) {
             Answer::create([
                 'survey_response_id' => $responseId,
                 'question_id' => $question->id,
                 'answer_text' => $value,
             ]);
+
+            return;
+        }
+        if ($question->type === 'checkbox') {
+
+            foreach ($value as $optionId) {
+        
+                $selectedOption = $question->options
+                    ->firstWhere('id', (int) $optionId);
+        
+                if (!$selectedOption) {
+                    continue;
+                }
+        
+                Answer::create([
+                    'survey_response_id' => $responseId,
+                    'question_id' => $question->id,
+                    'question_option_id' => $selectedOption->id,
+                    'answer_value' => $selectedOption->option_value,
+                ]);
+            }
         
             return;
         }
-
         $selectedOption = $question->options->firstWhere('id', (int) $value);
 
         Answer::create([

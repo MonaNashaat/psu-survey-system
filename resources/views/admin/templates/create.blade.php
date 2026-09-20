@@ -178,10 +178,14 @@
 
                 <div class="form-group">
                     <label class="form-label">نوع السؤال</label>
-                    <select name="sections[${sectionIdx}][questions][${questionCount}][type]" onchange="toggleOptions(this, ${sectionIdx}, ${questionCount})">
+                    <select name="sections[${sectionIdx}][questions][${questionCount}][type]"
+                            onchange="toggleOptions(this, ${sectionIdx}, ${questionCount})">
                         <option value="scale">تقييم 1-5</option>
-                        <option value="mcq">اختيار من متعدد</option>
-                        <option value="text">نص مفتوح</option>
+                        <option value="mcq">اختيار واحد</option>
+                        <option value="checkbox">اختيارات متعددة</option>
+                        <option value="short_text">إجابة قصيرة</option>
+                        <option value="text">إجابة طويلة</option>
+                        <option value="date">تاريخ</option>
                     </select>
                 </div>
 
@@ -192,21 +196,46 @@
 
                 <div class="form-group options-box" id="options-box-${sectionIdx}-${questionCount}">
                     <label class="form-label">الخيارات</label>
-                    <div class="option-input">
-                        <input type="text" name="sections[${sectionIdx}][questions][${questionCount}][options][]" value="غير موافق بشدة">
+
+                    <div id="options-list-${sectionIdx}-${questionCount}">
+                        <div class="option-input">
+                            <input type="text"
+                                name="sections[${sectionIdx}][questions][${questionCount}][options][]"
+                                value="غير موافق بشدة">
+                        </div>
+
+                        <div class="option-input">
+                            <input type="text"
+                                name="sections[${sectionIdx}][questions][${questionCount}][options][]"
+                                value="غير موافق">
+                        </div>
+
+                        <div class="option-input">
+                            <input type="text"
+                                name="sections[${sectionIdx}][questions][${questionCount}][options][]"
+                                value="محايد">
+                        </div>
+
+                        <div class="option-input">
+                            <input type="text"
+                                name="sections[${sectionIdx}][questions][${questionCount}][options][]"
+                                value="أوافق">
+                        </div>
+
+                        <div class="option-input">
+                            <input type="text"
+                                name="sections[${sectionIdx}][questions][${questionCount}][options][]"
+                                value="أوافق بشدة">
+                        </div>
                     </div>
-                    <div class="option-input">
-                        <input type="text" name="sections[${sectionIdx}][questions][${questionCount}][options][]" value="غير موافق">
-                    </div>
-                    <div class="option-input">
-                        <input type="text" name="sections[${sectionIdx}][questions][${questionCount}][options][]" value="محايد">
-                    </div>
-                    <div class="option-input">
-                        <input type="text" name="sections[${sectionIdx}][questions][${questionCount}][options][]" value="أوافق">
-                    </div>
-                    <div class="option-input">
-                        <input type="text" name="sections[${sectionIdx}][questions][${questionCount}][options][]" value="أوافق بشدة">
-                    </div>
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="add-option-${sectionIdx}-${questionCount}"
+                            onclick="addOption(${sectionIdx}, ${questionCount})"
+                            style="margin-top:10px; display:none;">
+                        إضافة اختيار
+                    </button>
                 </div>
 
                 <div class="page-actions">
@@ -219,9 +248,101 @@
     }
 
     function toggleOptions(selectEl, sectionIdx, questionIdx) {
-        const box = document.getElementById(`options-box-${sectionIdx}-${questionIdx}`);
-        box.style.display = selectEl.value === 'text' ? 'none' : 'block';
+    const type = selectEl.value;
+
+    const box = document.getElementById(
+        `options-box-${sectionIdx}-${questionIdx}`
+    );
+
+    const list = document.getElementById(
+        `options-list-${sectionIdx}-${questionIdx}`
+    );
+
+    const addButton = document.getElementById(
+        `add-option-${sectionIdx}-${questionIdx}`
+    );
+
+    if (
+        type === 'text' ||
+        type === 'short_text' ||
+        type === 'date'
+    ) {
+        box.style.display = 'none';
+        list.innerHTML = '';
+        addButton.style.display = 'none';
+        return;
     }
+
+    box.style.display = 'block';
+
+    if (type === 'scale') {
+        addButton.style.display = 'none';
+
+        list.innerHTML = `
+            <div class="option-input">
+                <input type="text"
+                       name="sections[${sectionIdx}][questions][${questionIdx}][options][]"
+                       value="غير موافق بشدة">
+            </div>
+
+            <div class="option-input">
+                <input type="text"
+                       name="sections[${sectionIdx}][questions][${questionIdx}][options][]"
+                       value="غير موافق">
+            </div>
+
+            <div class="option-input">
+                <input type="text"
+                       name="sections[${sectionIdx}][questions][${questionIdx}][options][]"
+                       value="محايد">
+            </div>
+
+            <div class="option-input">
+                <input type="text"
+                       name="sections[${sectionIdx}][questions][${questionIdx}][options][]"
+                       value="أوافق">
+            </div>
+
+            <div class="option-input">
+                <input type="text"
+                       name="sections[${sectionIdx}][questions][${questionIdx}][options][]"
+                       value="أوافق بشدة">
+            </div>
+        `;
+
+        return;
+    }
+
+    if (type === 'mcq' || type === 'checkbox') {
+        list.innerHTML = '';
+        addButton.style.display = 'inline-flex';
+
+        addOption(sectionIdx, questionIdx, 'اختيار 1');
+        addOption(sectionIdx, questionIdx, 'اختيار 2');
+    }
+}
+
+function addOption(sectionIdx, questionIdx, value = '') {
+    const list = document.getElementById(
+        `options-list-${sectionIdx}-${questionIdx}`
+    );
+
+    const html = `
+        <div class="option-input" style="display:flex; gap:8px; align-items:center;">
+            <input type="text"
+                   name="sections[${sectionIdx}][questions][${questionIdx}][options][]"
+                   value="${value}">
+
+            <button type="button"
+                    class="btn btn-danger"
+                    onclick="this.closest('.option-input').remove()">
+                حذف
+            </button>
+        </div>
+    `;
+
+    list.insertAdjacentHTML('beforeend', html);
+}
 
     function removeElement(id) {
         const el = document.getElementById(id);
