@@ -615,7 +615,7 @@
         /*
          * Multiple Choice
          */
-        if (questionType === 'mcq') {
+         if (questionType === 'mcq' || questionType === 'checkbox') {
             addButton.style.display = 'inline-flex';
 
             const mcqOptions = options.length

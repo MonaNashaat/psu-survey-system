@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\Survey;
 use RuntimeException;
 
 class StudentSkillsSurveySeeder extends Seeder
@@ -79,7 +80,7 @@ class StudentSkillsSurveySeeder extends Seeder
                     . 'والترشيح لمسارات التدريب المختلفة.',
 
                 'scope_level' => 'university',
-                'survey_owner' => 'president',
+                'survey_owner' => Survey::OWNER_PRESIDENCY,
                 'faculty_id' => null,
                 'survey_type' => 'institutional',
                 'department_id' => null,
