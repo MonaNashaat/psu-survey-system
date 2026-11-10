@@ -16,14 +16,15 @@
         ];
 
         $scopeLabel = match($survey->scope_level) {
-            'university' => $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
-                ? 'المكتب الفني لرئيس الجامعة'
-                : 'جامعة / مركز الجودة',
-
+            'university' => 'جامعة بورسعيد',
             'faculty' => 'كلية',
             'department' => 'قسم',
             default => '—',
         };
+
+        $surveyOwnerName = $survey->scope_level === 'university'
+            ? ($survey->ownerUser?->name ?? 'جهة جامعية')
+            : null;
 
         $isCourseSurvey = !empty($survey->course_offering_id);
         $semesterName = $semesterLabels[$survey->courseOffering?->semester] ?? ($survey->semester ?? '—');
@@ -50,29 +51,28 @@
 
         $canEdit = false;
 
-
-        $canEdit = false;
-
-        if ($currentUser->isUniversityAdmin()) {
+ 
+        if ($currentUser->isUniversityAdmin() || $currentUser->isPresidencyAdmin()) {
             $canEdit = (
                 $survey->scope_level === 'university'
-                && $survey->survey_owner === \App\Models\Survey::OWNER_QUALITY_CENTER
-            );
-        } elseif ($currentUser->isPresidencyAdmin()) {
-            $canEdit = (
-                $survey->scope_level === 'university'
-                && $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
+                && $survey->owner_user_id !== null
+                && (int) $survey->owner_user_id === (int) $currentUser->id
             );
         } elseif ($currentUser->isFacultyAdmin()) {
-
             $canEdit = (
-                ($survey->scope_level === 'faculty' && $survey->faculty_id === $currentUser->faculty_id) ||
-                ($survey->scope_level === 'department' && $survey->faculty_id === $currentUser->faculty_id)
+                (
+                    $survey->scope_level === 'faculty'
+                    && (int) $survey->faculty_id === (int) $currentUser->faculty_id
+                )
+                || (
+                    $survey->scope_level === 'department'
+                    && (int) $survey->faculty_id === (int) $currentUser->faculty_id
+                )
             );
         } elseif ($currentUser->isDepartmentAdmin()) {
             $canEdit = (
-                $survey->scope_level === 'department' &&
-                $survey->department_id === $currentUser->department_id
+                $survey->scope_level === 'department'
+                && (int) $survey->department_id === (int) $currentUser->department_id
             );
         }
     @endphp
@@ -136,9 +136,7 @@
                     @if($survey->scope_level === 'university')
                         <div>
                             <strong>الجهة:</strong>
-                            {{ $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
-                                ? 'المكتب الفني لرئيس الجامعة'
-                                : 'مركز ضمان الجودة والتأهيل للاعتماد' }}
+                            {{ $surveyOwnerName }}
                         </div>
                     @endif
                     <div><strong>نوع الربط:</strong> {{ $isCourseSurvey ? 'مقرر' : 'عام' }}</div>

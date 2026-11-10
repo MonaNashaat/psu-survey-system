@@ -82,25 +82,27 @@
 
                         $canEdit = false;
 
-                        if ($currentUser->isUniversityAdmin()) {
+                        if ($currentUser->isUniversityAdmin() || $currentUser->isPresidencyAdmin()) {
                             $canEdit = (
                                 $survey->scope_level === 'university'
-                                && $survey->survey_owner === \App\Models\Survey::OWNER_QUALITY_CENTER
-                            );
-                        } elseif ($currentUser->isPresidencyAdmin()) {
-                            $canEdit = (
-                                $survey->scope_level === 'university'
-                                && $survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY
+                                && $survey->owner_user_id !== null
+                                && (int) $survey->owner_user_id === (int) $currentUser->id
                             );
                         } elseif ($currentUser->isFacultyAdmin()) {
                             $canEdit = (
-                                ($survey->scope_level === 'faculty' && $survey->faculty_id === $currentUser->faculty_id) ||
-                                ($survey->scope_level === 'department' && $survey->faculty_id === $currentUser->faculty_id)
+                                (
+                                    $survey->scope_level === 'faculty'
+                                    && (int) $survey->faculty_id === (int) $currentUser->faculty_id
+                                )
+                                || (
+                                    $survey->scope_level === 'department'
+                                    && (int) $survey->faculty_id === (int) $currentUser->faculty_id
+                                )
                             );
                         } elseif ($currentUser->isDepartmentAdmin()) {
                             $canEdit = (
-                                $survey->scope_level === 'department' &&
-                                $survey->department_id === $currentUser->department_id
+                                $survey->scope_level === 'department'
+                                && (int) $survey->department_id === (int) $currentUser->department_id
                             );
                         }
                     @endphp
@@ -110,11 +112,9 @@
 
                         <td>
                             @if($survey->scope_level === 'university')
-                                @if($survey->survey_owner === \App\Models\Survey::OWNER_PRESIDENCY)
-                                    <span class="badge badge-success">المكتب الفني لرئيس الجامعة</span>
-                                @else
-                                    <span class="badge badge-success">جامعة / مركز الجودة</span>
-                                @endif
+                                <span class="badge badge-success">
+                                    {{ $survey->ownerUser?->name ?? 'استبيان جامعي' }}
+                                </span>
                             @elseif($survey->scope_level === 'faculty')
                                 <span class="badge badge-warning">كلية</span>
                             @else
