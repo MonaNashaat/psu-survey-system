@@ -25,6 +25,7 @@ class Survey extends Model
         'level',
         'academic_year',
         'survey_owner',
+        'owner_user_id',
 
         'start_date',
         'end_date',
@@ -37,6 +38,12 @@ class Survey extends Model
     public function faculty()
     {
         return $this->belongsTo(Faculty::class);
+    }
+    public function owner()
+
+    {
+
+        return $this->belongsTo(User::class, 'owner_user_id');
     }
 
     public function department()

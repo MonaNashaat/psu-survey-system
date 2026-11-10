@@ -17,53 +17,105 @@ class ActiveSurveysExport implements FromCollection, WithHeadings
     }
 
     public function collection()
-    {
-        $query = Survey::with(['courseOffering.course.department.faculty'])
-            ->withCount('responses')
-            ->where('is_active', true);
+{
+    $query = Survey::with([
+            'faculty',
+            'department',
+            'courseOffering.course.department.faculty'
+        ])
+        ->withCount('responses')
+        ->where('is_active', true);
 
-        if ($this->user->isUniversityAdmin()) {
-            $query->where('scope_level', 'university')
-                ->where('survey_owner', Survey::OWNER_QUALITY_CENTER);
-        } elseif ($this->user->isPresidencyAdmin()) {
-            $query->where('scope_level', 'university')
-                ->where('survey_owner', Survey::OWNER_PRESIDENCY);
-        } elseif ($this->user->isFacultyAdmin()) {
-            $query->where('faculty_id', $this->user->faculty_id);
-        } elseif ($this->user->isDepartmentAdmin()) {
-            $query->where('department_id', $this->user->department_id);
-        } else {
-            $query->whereRaw('1 = 0');
-        }
-
-        return $query->latest()->get()->map(function ($survey) {
-            return [
-                'id' => $survey->id,
-                'title' => $survey->title,
-                'survey_scope' => $survey->course_offering_id ? 'استبيان مادة' : 'استبيان عام',
-                'scope_level' => match ($survey->scope_level) {
-                    'university' => 'جامعة',
-                    'faculty' => 'كلية',
-                    'department' => 'قسم',
-                    'course' => 'مقرر',
-                    default => $survey->scope_level,
-                },
-                'faculty' => $survey->faculty?->name_ar ?? '—',
-                'department' => $survey->department?->name_ar ?? $survey->department_name ?? '—',
-                'course_title' => $survey->course_title ?? $survey->courseOffering?->course?->name_ar ?? '—',
-                'academic_year' => $survey->academic_year ?? '—',
-                'semester' => match ($survey->semester) {
-                    'first' => 'الفصل الدراسي الأول',
-                    'second' => 'الفصل الدراسي الثاني',
-                    'summer' => 'الفصل الصيفي',
-                    default => $survey->semester ?? '—',
-                },
-                'level' => $survey->level ?? '—',
-                'responses_count' => $survey->responses_count,
-                'link' => route('surveys.show', $survey->id),
-            ];
-        });
+    /*
+    |--------------------------------------------------------------------------
+    | University & Presidency Admins
+    |--------------------------------------------------------------------------
+    | Each account exports only its own university-level surveys.
+    */
+    if (
+        $this->user->isUniversityAdmin() ||
+        $this->user->isPresidencyAdmin()
+    ) {
+        $query->where('scope_level', 'university')
+            ->where('owner_user_id', $this->user->id);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Faculty Admin
+    |--------------------------------------------------------------------------
+    | Can export all faculty, department, and course surveys
+    | belonging to their faculty.
+    */
+    elseif ($this->user->isFacultyAdmin()) {
+        $query->where('faculty_id', $this->user->faculty_id)
+            ->whereIn('scope_level', ['faculty', 'department']);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Department Admin
+    |--------------------------------------------------------------------------
+    | Can export department and course surveys within their department.
+    */
+    elseif ($this->user->isDepartmentAdmin()) {
+        $query->where('department_id', $this->user->department_id)
+            ->where('scope_level', 'department');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Other Users
+    |--------------------------------------------------------------------------
+    */
+    else {
+        $query->whereRaw('1 = 0');
+    }
+
+    return $query->latest()->get()->map(function ($survey) {
+        return [
+            'id' => $survey->id,
+            'title' => $survey->title,
+
+            'survey_scope' => $survey->course_offering_id
+                ? 'استبيان مادة'
+                : 'استبيان عام',
+
+            'scope_level' => match ($survey->scope_level) {
+                'university' => 'جامعة',
+                'faculty' => 'كلية',
+                'department' => 'قسم',
+                'course' => 'مقرر',
+                default => $survey->scope_level,
+            },
+
+            'faculty' => $survey->faculty?->name_ar ?? '—',
+
+            'department' => $survey->department?->name_ar
+                ?? $survey->department_name
+                ?? '—',
+
+            'course_title' => $survey->course_title
+                ?? $survey->courseOffering?->course?->name_ar
+                ?? '—',
+
+            'academic_year' => $survey->academic_year ?? '—',
+
+            'semester' => match ($survey->semester) {
+                'first' => 'الفصل الدراسي الأول',
+                'second' => 'الفصل الدراسي الثاني',
+                'summer' => 'الفصل الصيفي',
+                default => $survey->semester ?? '—',
+            },
+
+            'level' => $survey->level ?? '—',
+
+            'responses_count' => $survey->responses_count,
+
+            'link' => route('surveys.show', $survey->id),
+        ];
+    });
+}
 
     public function headings(): array
     {

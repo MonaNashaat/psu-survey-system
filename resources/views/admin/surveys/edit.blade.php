@@ -490,20 +490,24 @@
                 </div>
 
                 <div class="checkbox-row">
-                    <input
-                        type="checkbox"
-                        id="required-${sectionIdx}-${questionIdx}"
-                        name="sections[${sectionIdx}][questions][${questionIdx}][is_required]"
-                        ${isRequired ? 'checked' : ''}
-                    >
+    <input
+        type="hidden"
+        name="sections[${sectionIdx}][questions][${questionIdx}][is_required]"
+        value="0"
+    >
 
-                    <label
-                        for="required-${sectionIdx}-${questionIdx}"
-                        style="margin:0;"
-                    >
-                        سؤال إجباري
-                    </label>
-                </div>
+    <input
+        type="checkbox"
+        id="required-${sectionIdx}-${questionIdx}"
+        name="sections[${sectionIdx}][questions][${questionIdx}][is_required]"
+        value="1"
+        ${isRequired ? 'checked' : ''}
+    >
+
+    <label for="required-${sectionIdx}-${questionIdx}" style="margin:0;">
+        سؤال إجباري
+    </label>
+</div>
 
                 <div
                     class="form-group options-box"

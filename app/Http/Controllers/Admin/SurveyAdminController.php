@@ -105,6 +105,7 @@ class SurveyAdminController extends Controller
 
                 'scope_level' => $scopeLevel,
                 'survey_owner' => $surveyOwner,
+                'owner_user_id' => $user->id,
                 'faculty_id' => $facultyId,
                 'department_id' => $departmentId,
 
@@ -179,7 +180,15 @@ class SurveyAdminController extends Controller
     public function update(Request $request, Survey $survey)
     {
         $this->authorizeSurveyManagement($survey);
-
+        if ($survey->responses()->exists()) {
+            return redirect()
+                ->route('admin.surveys.show', $survey->id)
+                ->with(
+                    'error',
+                    'لا يمكن تعديل هيكل الاستبيان بعد تسجيل إجابات، حفاظًا على البيانات والنتائج.'
+                );
+        }
+        // dd($request->input('sections'));
         $validated = $this->validateSurveyRequest($request);
         $user = auth()->user();
 
@@ -313,11 +322,16 @@ class SurveyAdminController extends Controller
 
     public function permissions(Survey $survey)
     {
-        if (!auth()->user()->isUniversityAdmin()) {
-            abort(403, 'ليس لديك صلاحية الوصول إلى هذه الصفحة');
+        $user = auth()->user();
+
+        if (!$user->isUniversityAdmin()) {
+            abort(403, 'ليس لديك صلاحية إدارة الاستبيانات');
         }
 
+        $this->authorizeSurveyManagement($survey);
+
         $survey->load('permissions.user');
+
         $users = User::orderBy('name')->get();
 
         return view('admin.surveys.permissions', compact('survey', 'users'));
@@ -325,38 +339,50 @@ class SurveyAdminController extends Controller
 
     public function storePermission(Request $request, Survey $survey)
     {
-        if (!auth()->user()->isUniversityAdmin()) {
-            abort(403, 'ليس لديك صلاحية الوصول إلى هذه الصفحة');
+        $user = auth()->user();
+
+        if (!$user->isUniversityAdmin()) {
+            abort(403, 'ليس لديك صلاحية إدارة الاستبيانات');
         }
 
-        $request->validate([
+        $this->authorizeSurveyManagement($survey);
+
+        $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'permission_type' => 'required|string',
+            'permission_type' => 'required|in:view_results',
         ]);
 
         SurveyPermission::firstOrCreate([
             'survey_id' => $survey->id,
-            'user_id' => $request->user_id,
-            'permission_type' => $request->permission_type,
+            'user_id' => $validated['user_id'],
+            'permission_type' => $validated['permission_type'],
         ]);
 
-        return redirect()->route('admin.surveys.permissions', $survey->id)
+        return redirect()
+            ->route('admin.surveys.permissions', $survey->id)
             ->with('success', 'تم منح الصلاحية بنجاح');
     }
 
-    public function destroyPermission(Survey $survey, SurveyPermission $permission)
-    {
-        if (!auth()->user()->isUniversityAdmin()) {
-            abort(403, 'ليس لديك صلاحية الوصول إلى هذه الصفحة');
+    public function destroyPermission(
+        Survey $survey,
+        SurveyPermission $permission
+    ) {
+        $user = auth()->user();
+
+        if (!$user->isUniversityAdmin()) {
+            abort(403, 'ليس لديك صلاحية إدارة الاستبيانات');
         }
 
-        if ($permission->survey_id != $survey->id) {
+        $this->authorizeSurveyManagement($survey);
+
+        if ((int) $permission->survey_id !== (int) $survey->id) {
             abort(404);
         }
 
         $permission->delete();
 
-        return redirect()->route('admin.surveys.permissions', $survey->id)
+        return redirect()
+            ->route('admin.surveys.permissions', $survey->id)
             ->with('success', 'تم حذف الصلاحية بنجاح');
     }
 
@@ -438,6 +464,7 @@ class SurveyAdminController extends Controller
                 'sections.*.questions.*.question_text' => 'required|string',
                 'sections.*.questions.*.type' => 'required|in:scale,mcq,checkbox,text,short_text,date',
                 'sections.*.questions.*.options' => 'nullable|array',
+                'sections.*.questions.*.is_required' => 'sometimes|boolean',
             ]);
         }
 
@@ -509,7 +536,13 @@ class SurveyAdminController extends Controller
                     'survey_section_id' => $section->id,
                     'question_text' => $questionData['question_text'],
                     'type' => $questionData['type'],
-                    'is_required' => isset($questionData['is_required']),
+                    'is_required' => filter_var(
+
+                        $questionData['is_required'] ?? false,
+
+                        FILTER_VALIDATE_BOOLEAN
+
+                    ),
                     'display_order' => $questionIndex + 1,
                 ]);
 
@@ -813,14 +846,9 @@ class SurveyAdminController extends Controller
 
     private function getVisibleSurveysQuery(User $user)
     {
-        if ($user->isUniversityAdmin()) {
+        if ($user->isUniversityAdmin() || $user->isPresidencyAdmin()) {
             return Survey::where('scope_level', 'university')
-                ->where('survey_owner', Survey::OWNER_QUALITY_CENTER);
-        }
-
-        if ($user->isPresidencyAdmin()) {
-            return Survey::where('scope_level', 'university')
-                ->where('survey_owner', Survey::OWNER_PRESIDENCY);
+                ->where('owner_user_id', $user->id);
         }
 
         if ($user->isFacultyAdmin()) {
@@ -924,10 +952,12 @@ class SurveyAdminController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->isUniversityAdmin()) {
+        // University-level accounts: access only their own surveys.
+        if ($user->isUniversityAdmin() || $user->isPresidencyAdmin()) {
+
             if (
                 $survey->scope_level === 'university'
-                && $survey->survey_owner === Survey::OWNER_QUALITY_CENTER
+                && (int) $survey->owner_user_id === (int) $user->id
             ) {
                 return;
             }
@@ -935,20 +965,18 @@ class SurveyAdminController extends Controller
             abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
         }
 
-        if ($user->isPresidencyAdmin()) {
-            if (
-                $survey->scope_level === 'university'
-                && $survey->survey_owner === Survey::OWNER_PRESIDENCY
-            ) {
-                return;
-            }
-
-            abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
-        }
-
+        // Faculty admins: preserve existing faculty-level visibility.
         if ($user->isFacultyAdmin()) {
 
-            if ((int) $survey->faculty_id === (int) $user->faculty_id) {
+            if (
+
+                in_array($survey->scope_level, ['faculty', 'department'], true)
+
+                && $survey->faculty_id !== null
+
+                && (int) $survey->faculty_id === (int) $user->faculty_id
+
+            ) {
 
                 return;
             }
@@ -956,14 +984,21 @@ class SurveyAdminController extends Controller
             abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
         }
 
+        // Department admins: preserve existing department-level visibility.
         if ($user->isDepartmentAdmin()) {
-            if ($survey->scope_level === 'department' && (int) $survey->department_id === (int) $user->department_id) {
+
+            if (
+                $survey->scope_level === 'department'
+                && $survey->department_id !== null
+                && (int) $survey->department_id === (int) $user->department_id
+            ) {
                 return;
             }
 
             abort(403, 'ليس لديك صلاحية الوصول إلى هذا الاستبيان');
         }
 
+        // Users with explicitly granted results access.
         $hasPermission = $survey->permissions()
             ->where('user_id', $user->id)
             ->where('permission_type', 'view_results')
@@ -978,10 +1013,12 @@ class SurveyAdminController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->isUniversityAdmin()) {
+        // University-level accounts can manage only their own surveys.
+        if ($user->isUniversityAdmin() || $user->isPresidencyAdmin()) {
+
             if (
                 $survey->scope_level === 'university'
-                && $survey->survey_owner === Survey::OWNER_QUALITY_CENTER
+                && (int) $survey->owner_user_id === (int) $user->id
             ) {
                 return;
             }
@@ -989,27 +1026,28 @@ class SurveyAdminController extends Controller
             abort(403, 'ليس لديك صلاحية تعديل هذا الاستبيان');
         }
 
-        if ($user->isPresidencyAdmin()) {
-            if (
-                $survey->scope_level === 'university'
-                && $survey->survey_owner === Survey::OWNER_PRESIDENCY
-            ) {
-                return;
-            }
-
-            abort(403, 'ليس لديك صلاحية تعديل هذا الاستبيان');
-        }
-
+        // Faculty admins can manage faculty-level surveys.
         if ($user->isFacultyAdmin()) {
-            if ($survey->scope_level === 'faculty' && (int) $survey->faculty_id === (int) $user->faculty_id) {
+
+            if (
+                $survey->scope_level === 'faculty'
+                && $survey->faculty_id !== null
+                && (int) $survey->faculty_id === (int) $user->faculty_id
+            ) {
                 return;
             }
 
             abort(403, 'ليس لديك صلاحية تعديل هذا الاستبيان');
         }
 
+        // Department admins can manage their department surveys.
         if ($user->isDepartmentAdmin()) {
-            if ($survey->scope_level === 'department' && (int) $survey->department_id === (int) $user->department_id) {
+
+            if (
+                $survey->scope_level === 'department'
+                && $survey->department_id !== null
+                && (int) $survey->department_id === (int) $user->department_id
+            ) {
                 return;
             }
 
@@ -1021,26 +1059,7 @@ class SurveyAdminController extends Controller
 
     private function authorizeSurveyResultsAccess(Survey $survey): void
     {
-        $user = auth()->user();
-
-        if (
-            $user->isUniversityAdmin()
-            || $user->isPresidencyAdmin()
-            || $user->isFacultyAdmin()
-            || $user->isDepartmentAdmin()
-        ) {
-            $this->authorizeSurveyAccess($survey);
-            return;
-        }
-
-        $hasPermission = $survey->permissions()
-            ->where('user_id', $user->id)
-            ->where('permission_type', 'view_results')
-            ->exists();
-
-        if (!$hasPermission) {
-            abort(403, 'ليس لديك صلاحية الوصول إلى نتائج هذا الاستبيان');
-        }
+        $this->authorizeSurveyAccess($survey);
     }
     public function bulkCreate()
     {
@@ -1133,7 +1152,7 @@ class SurveyAdminController extends Controller
         $created = 0;
         $skipped = 0;
 
-        DB::transaction(function () use ($offerings, $validated, $template, $request, &$created, &$skipped) {
+        DB::transaction(function () use ($offerings, $validated, $template, $request, $user, &$created, &$skipped) {
             foreach ($offerings as $offering) {
                 $alreadyExists = Survey::where('course_offering_id', $offering->id)
                     ->where('title', $validated['title'])
@@ -1149,6 +1168,8 @@ class SurveyAdminController extends Controller
                     'description' => $validated['description'] ?? null,
 
                     'scope_level' => 'department',
+                    'owner_user_id' => $user->id,
+                    'survey_owner' => Survey::OWNER_QUALITY_CENTER,
                     'faculty_id' => $offering->course?->department?->faculty_id,
                     'department_id' => $offering->course?->department_id,
 
@@ -1159,6 +1180,7 @@ class SurveyAdminController extends Controller
                     'semester' => $offering->semester,
                     'level' => $offering->level,
                     'academic_year' => $offering->academic_year,
+
 
                     'is_active' => $request->has('is_active'),
                     'allow_multiple_submissions' => $request->has('allow_multiple_submissions'),
