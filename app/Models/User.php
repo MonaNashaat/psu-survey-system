@@ -128,26 +128,29 @@ class User extends Authenticatable
     }
     public function canViewSurveyResults(Survey $survey): bool
     {
-        if ($this->isUniversityAdmin()) {
+        // University and presidency admins can view results
+        // only for university surveys they own.
+        if ($this->isUniversityAdmin() || $this->isPresidencyAdmin()) {
             return $survey->scope_level === 'university'
-                && $survey->survey_owner === Survey::OWNER_QUALITY_CENTER;
+                && $survey->owner_user_id !== null
+                && (int) $survey->owner_user_id === (int) $this->id;
         }
     
-        if ($this->isPresidencyAdmin()) {
-            return $survey->scope_level === 'university'
-                && $survey->survey_owner === Survey::OWNER_PRESIDENCY;
-        }
-    
+        // Faculty admins can view faculty and department survey results.
         if ($this->isFacultyAdmin()) {
             return in_array($survey->scope_level, ['faculty', 'department'], true)
+                && $survey->faculty_id !== null
                 && (int) $survey->faculty_id === (int) $this->faculty_id;
         }
     
+        // Department admins can view their department survey results.
         if ($this->isDepartmentAdmin()) {
             return $survey->scope_level === 'department'
+                && $survey->department_id !== null
                 && (int) $survey->department_id === (int) $this->department_id;
         }
     
+        // Explicitly authorized viewers.
         if ($this->isResultsViewer()) {
             return $this->surveyPermissions()
                 ->where('survey_id', $survey->id)
